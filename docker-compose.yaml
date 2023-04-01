@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+
+  postgres:
+    image: "postgres:14"
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=zombie
+      - POSTGRES_DB=zombie
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zombie -d zombie"]
+      interval: 1s
+      timeout: 1s
+      retries: 5
+    
+  init_db:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: init-db
+
+  psql2py:
+    image: "psql2py"
+    volumes:
+      - ./zombie/server/sql:/input:ro
+      - ./zombie/server:/output:rw
+    environment:
+      - PSQL2PY_DB_HOST=postgres
+      - PSQL2PY_DB_PASSWORD=password
+      - PSQL2PY_DB_USER=zombie
+      - PSQL2PY_DB_NAME=zombie
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init_db:
+        condition: service_completed_successfully
+
+  
