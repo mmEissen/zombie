@@ -18,7 +18,7 @@ services:
   init_db:
     build:
       context: .
-      dockerfile: docker/server/Dockerfile
+      dockerfile: docker/init_db/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,8 +35,19 @@ services:
       - PSQL2PY_DB_USER=zombie
       - PSQL2PY_DB_NAME=zombie
     depends_on:
-      postgres:
-        condition: service_healthy
+      init_db:
+        condition: service_completed_successfully
+  
+  server:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./zombie:/code/zombie:ro
+    command: --reload
+    depends_on:
       init_db:
         condition: service_completed_successfully
 

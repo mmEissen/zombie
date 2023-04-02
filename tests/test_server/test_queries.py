@@ -23,12 +23,21 @@ class TestActivateGame:
 
 @pytest.fixture
 def active_game_id():
-    queries.activate_game(game_id=queries.insert_game()[0].game_id)
+    game_id = queries.insert_game()[0].game_id
+    queries.activate_game(game_id=game_id)
+    return game_id
 
 
 class TestDeactivateGame:
     def test_happy_path(self, active_game_id):
         queries.deactivate_game(game_id=active_game_id)
+
+
+class TestGetActiveGame:
+    def test_happy_path(self, active_game_id, inactive_game_id):
+        game_id = queries.get_active_game_id()[0].game_id
+
+        assert game_id == active_game_id
 
 
 class TestInsertPlayer:

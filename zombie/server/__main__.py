@@ -1,19 +1,13 @@
 import click
 import environ
 
-from zombie.server import db, config
+from zombie.server import conf, db
 
 
 @click.group()
 def cli():
-    conf = environ.to_config(config.AppConfig)
-    db.set_db_config({
-        "dbname": conf.db.name,
-        "user": conf.db.user,
-        "password": conf.db.password,
-        "host": conf.db.host,
-        "port": conf.db.port,
-    })
+    config = environ.to_config(conf.AppConfig)
+    db.set_db_config(config.db)
 
 
 @cli.command()

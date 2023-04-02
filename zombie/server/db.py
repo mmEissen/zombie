@@ -5,15 +5,23 @@ import psycopg2.extensions
 from os import path
 import copy
 
+from zombie.server import conf
+
 
 SQL_DIR = path.join(path.dirname(__file__), "sql")
 SCHEMA_FILE = path.join(SQL_DIR, "schema.sql")
 
 
 _db_config = {}
-def set_db_config(config: dict[str, object]) -> None:
+def set_db_config(db_config: conf.AppConfig.DB) -> None:
     global _db_config
-    _db_config = copy.deepcopy(config)
+    _db_config = {
+        "dbname": db_config.name,
+        "user": db_config.user,
+        "password": db_config.password,
+        "host": db_config.host,
+        "port": db_config.port,
+    }
 
 
 @contextlib.contextmanager

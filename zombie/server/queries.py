@@ -64,6 +64,28 @@ RETURNING null AS null
 
 deactivate_game = _deactivate_game()
 
+class _get_active_game_id:
+    _STATEMENT = r"""
+SELECT game_id
+FROM games
+WHERE is_active
+"""
+    @dataclasses.dataclass
+    class Row:
+        pass
+        game_id: int
+
+
+    def __call__(
+        self,
+    ) -> list[Row]:
+        """"""
+        params = {
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+get_active_game_id = _get_active_game_id()
+
 class _insert_game:
     _STATEMENT = r"""
 /*

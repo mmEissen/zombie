@@ -12,3 +12,9 @@ class AppConfig:
         password = environ.var("password")
     
     db = environ.group(DB)
+
+    @environ.config
+    class Flask:
+        secret_key = environ.var("dev")
+
+    flask = environ.group(Flask)

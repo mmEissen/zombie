@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
   libpq-dev \
   && rm -rf /var/lib/apt/lists/*
 
-RUN pip install "poetry==$POETRY_VERSION" "gunicorn==20.1.0"
+RUN pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
@@ -27,4 +27,4 @@ COPY zombie/ /code/zombie/
 
 RUN poetry install --only main --no-interaction --no-ansi
 
-ENTRYPOINT [ "gunicorn", "-b", "0.0.0.0:8000", "zombie.server.wsgi:app" ]
+ENTRYPOINT [ "python", "-m", "zombie.server" ]
