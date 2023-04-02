@@ -4,10 +4,15 @@ from zombie.server import queries
 
 
 class GameState(enum.Enum):
-    NO_GAME = enum.auto()
-    REGISTRATION = enum.auto()
+    LOBY = enum.auto()
     ROUND_1 = enum.auto()
+    ROUND_1_SCORE = enum.auto()
+    ENDED = enum.auto()
 
 
-def get_game_state() -> GameState:
-    pass
+def get_active_game_id() -> int | None:
+    game_id = queries.get_active_game_id()
+    if not game_id:
+        return None
+    return game_id[0].game_id
+

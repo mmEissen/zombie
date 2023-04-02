@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS rounds (
     )
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_round ON rounds(when_ended) WHERE when_ended IS NULL;
+
 CREATE TABLE IF NOT EXISTS touches (
     touch_id BIGSERIAL PRIMARY KEY,
     round_id BIGINT NOT NULL references rounds(round_id),
