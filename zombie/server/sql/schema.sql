@@ -2,6 +2,8 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE IF NOT EXISTS games (
     game_id BIGSERIAL PRIMARY KEY,
+    when_created TIMESTAMP DEFAULT now(),
+
     is_active BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -9,6 +11,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_game ON games(is_active) WHERE
 
 CREATE TABLE IF NOT EXISTS players (
     player_id BIGSERIAL PRIMARY KEY,
+    when_created TIMESTAMP DEFAULT now(),
+
     game_id BIGINT NOT NULL references games(game_id),
     name TEXT NOT NULL,
     nfc_id TEXT NOT NULL,
@@ -19,6 +23,8 @@ CREATE TABLE IF NOT EXISTS players (
 
 CREATE TABLE IF NOT EXISTS rounds (
     round_id BIGSERIAL PRIMARY KEY,
+    when_created TIMESTAMP DEFAULT now(),
+
     game_id BIGINT NOT NULL references games(game_id),
     round_number INTEGER NOT NULL,
 
@@ -39,6 +45,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_round ON rounds(when_ended) WH
 
 CREATE TABLE IF NOT EXISTS touches (
     touch_id BIGSERIAL PRIMARY KEY,
+    when_created TIMESTAMP DEFAULT now(),
+    
     round_id BIGINT NOT NULL references rounds(round_id),
     when_touched TIMESTAMP NOT NULL DEFAULT now(),
     left_player BIGINT NOT NULL references players(player_id),

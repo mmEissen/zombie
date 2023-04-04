@@ -1,3 +1,4 @@
+import datetime
 import pytest
 from zombie.server import queries
 
@@ -149,3 +150,10 @@ class TestGetGameInfo:
         game = rows[0]
         assert game.round_number == 2
         assert game.round_ended is False
+
+
+class TestListGames:
+    def test_happy_path(self, active_game_id, inactive_game_id):
+        rows = queries.list_games(before=datetime.datetime.now(), count=2)
+
+        assert {row.game_id for row in rows} == {active_game_id, inactive_game_id}
