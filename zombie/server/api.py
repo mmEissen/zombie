@@ -56,3 +56,30 @@ def list_games():
         data=games
     )
     return flask.jsonify(page.dict())
+
+
+class PutPlayer(pydantic.BaseModel):
+    name: str
+    nfc_id: str
+
+
+@blueprint.put(
+    "/game/<int:game_id>/player",
+)
+def put_player(game_id: int):
+    player = PutPlayer(**flask.request.json)
+    
+
+
+@blueprint.get(
+    "/game/<int:game_id>/player/list",
+)
+def list_players(game_id: int):
+    pass
+
+
+@blueprint.put(
+    "/player/<int:player_id>",
+)
+def get_player(player_id):
+    pass

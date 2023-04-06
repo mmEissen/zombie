@@ -14,6 +14,7 @@ psql2py-core = "^0.1.0"
 environ-config = "^23.1.0"
 pydantic = "^1.10.7"
 types-flask = "^1.1.6"
+pyserial = "^3.5"
 
 
 [tool.poetry.group.dev.dependencies]
