@@ -1,5 +1,6 @@
 SELECT 
     games.game_id AS game_id,
-    (SELECT players.name FROM players WHERE players.nfc_id = %(nfc_id)s) AS name
+    players.name AS name
 FROM games
+JOIN players ON players.game_id = games.game_id AND players.nfc_id = %(nfc_id)s
 WHERE games.is_active
