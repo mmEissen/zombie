@@ -15,6 +15,9 @@ environ-config = "^23.1.0"
 pydantic = "^1.10.7"
 types-flask = "^1.1.6"
 pyserial = "^3.5"
+requests = "^2.28.2"
+pillow = "^9.5.0"
+qrcode = {extras = ["pil"], version = "^7.4.2"}
 
 
 [tool.poetry.group.dev.dependencies]

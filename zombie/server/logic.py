@@ -55,3 +55,12 @@ def get_game(game_id: int) -> Game | None:
 def new_game() -> Game:
     game_id = queries.insert_game()[0].game_id
     return Game.from_game_row(queries.get_game_info(game_ids=[game_id])[0])
+
+
+class Player(pydantic.BaseModel):
+    id_: int
+    name: str
+
+
+def register_player(uid: str, name: str) -> Player:
+    pass

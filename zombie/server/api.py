@@ -78,8 +78,15 @@ def list_players(game_id: int):
     pass
 
 
-@blueprint.put(
+@blueprint.get(
     "/player/<int:player_id>",
 )
-def get_player(player_id):
+def get_player(player_id: int):
     pass
+
+
+@blueprint.put(
+    "/touch",
+)
+def put_touch():
+    return "", 201
