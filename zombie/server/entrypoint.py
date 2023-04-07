@@ -1,7 +1,7 @@
 import flask
 import psql2py_core
 
-from zombie.server import conf, db, admin, api
+from zombie.server import conf, db, admin, api, player
 
 
 def create_app(config: conf.AppConfig):
@@ -16,5 +16,6 @@ def create_app(config: conf.AppConfig):
 
     app.register_blueprint(admin.blueprint)
     app.register_blueprint(api.blueprint)
+    app.register_blueprint(player.blueprint)
 
     return app

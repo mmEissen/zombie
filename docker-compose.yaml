@@ -47,6 +47,7 @@ services:
     volumes:
       - ./zombie:/code/zombie:ro
     command: --reload
+    restart: always
     depends_on:
       init_db:
         condition: service_completed_successfully

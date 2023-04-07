@@ -6,4 +6,5 @@ blueprint = flask.Blueprint("player", __name__, template_folder="templates", url
 
 @blueprint.route("/")
 def root():
-    return flask.render_template("player_home.html")
+    uid = flask.request.args.get("uid")
+    return flask.render_template("player_home.html", uid=uid)

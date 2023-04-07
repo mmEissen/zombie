@@ -52,14 +52,32 @@ def get_game(game_id: int) -> Game | None:
     return Game.from_game_row(games[0])
 
 
+def get_active_game() -> Game | None:
+    active_game_id = get_active_game_id()
+    if active_game_id is None:
+        return None
+    return get_game(active_game_id)
+
+
 def new_game() -> Game:
     game_id = queries.insert_game()[0].game_id
     return Game.from_game_row(queries.get_game_info(game_ids=[game_id])[0])
 
 
 class Player(pydantic.BaseModel):
-    id_: int
-    name: str
+    game_id: int | None = None
+    name: str | None = None
+
+
+def get_player_in_active_game(uid: str) -> Player:
+    players = queries.get_player_in_active_game(nfc_id=uid)
+    if not players:
+        return Player()
+    player = players[0]
+    return Player(
+        game_id=player.game_id,
+        name=player.name,
+    )
 
 
 def register_player(uid: str, name: str) -> Player:

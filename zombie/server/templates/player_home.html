@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+
+{% block html_head %}
+<script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
+<script>
+$(document).ready(function(e) {
+    var current_state_div = $('#div-loading');
+
+    function set_current_state_div (new_state) {
+        current_state_div.attr("hidden", true);
+        current_state_div = new_state;
+        current_state_div.attr("hidden", false);
+    }
+
+    function set_state_no_active_game () {
+        set_current_state_div($('#div-no-active-game'));
+    }
+
+    function set_state_registration_form () {
+        set_current_state_div($('#div-registration-form'));
+    }
+
+    function update_from_result (data) {
+        var active_game_id = data.game_id;
+        var player_name = data.name;
+
+        if (active_game_id === null) {
+            set_state_no_active_game();
+        } else if (player_name === null) {
+            set_state_registration_form();
+        }
+    }
+
+    (function update() {
+        setTimeout(
+            function() {
+                $.ajax({
+                    dataType: "json",
+                    url: "{{ url_for('api.get_player_in_active_game', uid=(uid | urlencode)) }}",
+                    success: update_from_result,
+                    error: set_state_no_active_game,
+                    complete: update,
+                    timeout: 1000
+                });
+            },
+            2000,
+        )
+    })();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="div-loading">
+    Loading...
+</div>
+<div id="div-no-active-game" hidden=true>
+    No game is currently active!
+</div>
+<div id="div-registration-form" hidden=true>
+    Registration Form
+</div>
+<div id="div-pre-game" hidden=true>
+    Pre Game
+</div>
+<div id="div-please-wait" hidden=true>
+    Please wait!
+</div>
+<div id="div-round" hidden=true>
+    Round active
+</div>
+{% endblock %}

@@ -159,6 +159,34 @@ GROUP BY games.game_id
 
 get_game_info = _get_game_info()
 
+class _get_player_in_active_game:
+    _STATEMENT = r"""
+SELECT 
+    players.game_id AS game_id,
+    players.name AS name
+FROM players
+RIGHT JOIN games ON players.game_id = games.game_id AND games.is_active
+WHERE players.nfc_id = %(nfc_id)s OR players.nfc_id IS NULL
+"""
+    @dataclasses.dataclass
+    class Row:
+        game_id: int
+        name: str
+
+
+    def __call__(
+        self,
+        *,
+        nfc_id: str,
+    ) -> list[Row]:
+        """"""
+        params = {
+            "nfc_id": nfc_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+get_player_in_active_game = _get_player_in_active_game()
+
 class _insert_game:
     _STATEMENT = r"""
 /*
