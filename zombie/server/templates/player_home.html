@@ -21,6 +21,10 @@ $(document).ready(function(e) {
         set_current_state_div($('#div-registration-form'));
     }
 
+    function set_state_pre_game () {
+        set_current_state_div($('#div-pre-game'));
+    }
+
     function update_from_result (data) {
         var active_game_id = data.game_id;
         var player_name = data.name;
@@ -29,8 +33,35 @@ $(document).ready(function(e) {
             set_state_no_active_game();
         } else if (player_name === null) {
             set_state_registration_form();
+        } else {
+            set_state_pre_game();
         }
     }
+
+    function clear_error () {
+        $('#div-error').empty();
+    }
+
+    function set_error (error) {
+        clear_error();
+        $('#div-error').append("Sorry, this name already exists!");
+    }
+
+    $('#btn-name-submit').click(function(e) {
+        clear_error();
+        $('#btn-name-submit').attr("disabled", true);
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.put_player') }}",
+            type: "PUT",
+            success: function () {},
+            data: JSON.stringify({name: $('#form-input-name').val(), nfc_id: $('#form-input-uid').val()}),
+            contentType: 'application/json',
+            error: function () {
+                set_error("Sorry, this name already exists!");
+            }
+        });
+    });
 
     (function update() {
         setTimeout(
@@ -46,12 +77,15 @@ $(document).ready(function(e) {
             },
             2000,
         )
-    })();
+    })();    
 });
 </script>
 {% endblock %}
 
 {% block content %}
+<div id="div-error">
+
+</div>
 <div id="div-loading">
     Loading...
 </div>
@@ -59,7 +93,12 @@ $(document).ready(function(e) {
     No game is currently active!
 </div>
 <div id="div-registration-form" hidden=true>
-    Registration Form
+    <form>
+        <label>Name:</label><br>
+        <input type="text" name="name" id="form-input-name"><br>
+        <input type="hidden" name="uid" id="form-input-uid" value="{{ uid }}">
+        <button id="btn-name-submit">Submit</button>
+    </form>
 </div>
 <div id="div-pre-game" hidden=true>
     Pre Game

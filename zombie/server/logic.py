@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import pydantic
 from zombie.server import queries
+import psycopg2.errors
 
 
 def get_active_game_id() -> int | None:
@@ -99,5 +100,12 @@ def get_player_in_active_game(uid: str) -> Player:
     )
 
 
-def register_player(uid: str, name: str) -> Player:
+class PlayerNameExistsError(Exception):
     pass
+
+
+def create_player_in_active_game(name: str, nfc_id: str) -> None:
+    try:
+        queries.insert_player(name=name, nfc_id=nfc_id)
+    except psycopg2.errors.UniqueViolation as e:
+        raise PlayerNameExistsError() from e

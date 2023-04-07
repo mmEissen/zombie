@@ -58,12 +58,26 @@ def nfc_id():
 
 class TestInsertPlayer:
     def test_happy_path(self, active_game_id, player_name, nfc_id):
-        queries.insert_player(game_id=active_game_id, name=player_name, nfc_id=nfc_id)
+        queries.insert_player(name=player_name, nfc_id=nfc_id)
+    
+    def test_duplicate_nfc_id_updates_name(self, active_game_id, player_id, nfc_id):
+        new_name = "new_name"
+
+        queries.insert_player(name=new_name, nfc_id=nfc_id)
+
+        player = queries.get_player_in_active_game(nfc_id=nfc_id)[0]
+        assert player.name == new_name
+    
+    def test_duplicate_name_raises(self, active_game_id, player_id, player_name):
+        other_nfc_id = "other_nfc_id"
+
+        with pytest.raises(psycopg2.errors.UniqueViolation):
+            queries.insert_player(name=player_name, nfc_id=other_nfc_id)
 
 
 @pytest.fixture
 def player_id(active_game_id, player_name, nfc_id):
-    return queries.insert_player(game_id=active_game_id, name=player_name, nfc_id=nfc_id)[0].player_id
+    return queries.insert_player(name=player_name, nfc_id=nfc_id)[0].player_id
 
 
 class TestStartRound:
@@ -157,3 +171,13 @@ class TestListGames:
         rows = queries.list_games(before=datetime.datetime.now(), count=2)
 
         assert {row.game_id for row in rows} == {active_game_id, inactive_game_id}
+
+
+
+class TestGetPlayerInActiveGame:
+    def test_happy_path(self, active_game_id, player_id, player_name, nfc_id):
+        players = queries.get_player_in_active_game(nfc_id=nfc_id)
+
+        player = players[0]
+        assert player.game_id == active_game_id
+        assert player.name == player_name

@@ -1,6 +1,7 @@
 from typing import Generic, TypeVar
 import flask
 import pydantic
+import urllib.parse
 from zombie.server import logic
 
 blueprint = flask.Blueprint("api", __name__, url_prefix="/api")
@@ -77,10 +78,15 @@ class PutPlayer(pydantic.BaseModel):
 
 
 @blueprint.put(
-    "/game/<int:game_id>/player",
+    "/active-game/player",
 )
-def put_player(game_id: int):
+def put_player():
     player = PutPlayer(**flask.request.json)
+    try:
+        logic.create_player_in_active_game(player.name, player.nfc_id)
+    except logic.PlayerNameExistsError:
+        flask.abort(409)
+    return "", 201
 
 
 @blueprint.get(
@@ -94,6 +100,7 @@ def list_players(game_id: int):
     "active-game/player/<uid>",
 )
 def get_player_in_active_game(uid: str):
+    uid = urllib.parse.unquote_plus(uid)
     player = logic.get_player_in_active_game(uid)
     return flask.jsonify(player.dict())
 

@@ -161,11 +161,9 @@ class _get_player_in_active_game:
     _STATEMENT = r"""
 SELECT 
     games.game_id AS game_id,
-    players.name AS name
-FROM players
-RIGHT OUTER JOIN games ON players.game_id = games.game_id
-WHERE players.nfc_id = %(nfc_id)s OR players.nfc_id IS NULL
-AND games.is_active
+    (SELECT players.name FROM players WHERE players.nfc_id = %(nfc_id)s) AS name
+FROM games
+WHERE games.is_active
 """
     @dataclasses.dataclass
     class Row:
@@ -218,7 +216,8 @@ Columns:
     player_id: bigint
 */
 INSERT INTO players (game_id, name, nfc_id) 
-VALUES (%(game_id)s, %(name)s, %(nfc_id)s) 
+VALUES ((SELECT game_id FROM games WHERE is_active), %(name)s, %(nfc_id)s)
+ON CONFLICT (game_id, nfc_id) DO UPDATE SET name = %(name)s
 RETURNING player_id
 """
     @dataclasses.dataclass
@@ -229,14 +228,12 @@ RETURNING player_id
     def __call__(
         self,
         *,
-        game_id: int,
         name: str,
         nfc_id: str,
     ) -> list[Row]:
         """Columns:
         player_id: bigint"""
         params = {
-            "game_id": game_id,
             "name": name,
             "nfc_id": nfc_id,
         }
