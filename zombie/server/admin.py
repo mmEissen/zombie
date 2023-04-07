@@ -10,3 +10,7 @@ def root():
 
     return flask.render_template("admin_home.html", games=games)
 
+
+@blueprint.route("/game/<int:game_id>")
+def game_details(game_id: int):
+    return flask.render_template("admin_game.html", game_id=game_id)

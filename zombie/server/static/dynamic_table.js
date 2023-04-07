@@ -7,11 +7,16 @@ var dynamicTable = (function () {
     /** Builds the row with columns from the specified names. 
      *  If the item parameter is specified, the memebers of the names array will be used as property names of the item; otherwise they will be directly parsed as text.
      */
-    function _buildRowColumns(names, item) {
+    function _buildRowColumns(names_or_function, item) {
         var row = '<tr>';
-        if (names && names.length > 0) {
-            $.each(names, function (index, name) {
-                var c = item ? item[name + ''] : name;
+        if (names_or_function && names_or_function.length > 0) {
+            $.each(names_or_function, function (index, name_or_function) {
+                var c;
+                if (typeof name_or_function === 'function') {
+                    c = name_or_function(item)
+                } else {
+                    c = item ? item[name_or_function + ''] : name_or_function;
+                }
                 row += '<td>' + c + '</td>';
             });
         }

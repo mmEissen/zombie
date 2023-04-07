@@ -1,26 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Admin{% endblock %}
+{% block title %}Admin - Home{% endblock %}
 
 {% block html_head %}
 <script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
 <script>
+var games_table;
+
+function active_button(item) {
+    var is_active = item.is_active;
+    var text = is_active ? "YES" : "NO"
+    return "<button onclick=\"activate_game(" + item.id_ + ")\">" + text + "</button>";
+}
+
+function load_games() {
+    $.getJSON(
+        "{{ url_for('api.list_games') }}",
+        function( response ) {
+            games_table.load(response.data);
+        }
+    )
+}
+
+function activate_game(game_id) {
+    $.ajax({
+        dataType: "json",
+        url: "{{ url_for('api.put_active_game') }}",
+        type: "PUT",
+        data: JSON.stringify({game_id: game_id}),
+        contentType: 'application/json',
+        success: load_games
+    });
+}
+
 $(document).ready(function(e) {
-    var games_table = dynamicTable.config('games-table',
-        ['id_', 'when_created', 'players', 'status', 'is_active'],
+    games_table = dynamicTable.config('games-table',
+        ['id_', 'when_created', 'players', 'status', active_button],
         ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?'],
         'There are no current games.');
 
-    function load_games() {
-        $.getJSON(
-            "{{ url_for('api.list_games') }}",
-            function( response ) {
-                games_table.load(response.data);
-            }
-        )
-    }
 
     $('#btn-new-game').click(function(e) {
         $.ajax({
+            dataType: "json",
             url: "{{ url_for('api.put_game') }}",
             type: "PUT",
             success: load_games

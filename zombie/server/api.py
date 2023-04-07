@@ -32,14 +32,17 @@ def put_game():
     )
 
 
-@blueprint.get(
-    "/game/active",
+class PutActiveGame(pydantic.BaseModel):
+    game_id: int
+
+
+@blueprint.put(
+        "/active-game"
 )
-def get_active_game():
-    game = logic.get_active_game()
-    if game is None:
-        return "Not Found", 404
-    return flask.jsonify(game.dict())
+def put_active_game():
+    active_game = PutActiveGame(**flask.request.json)
+    logic.activate_game(active_game.game_id)
+    return "", 204
 
 
 @blueprint.get(
@@ -88,7 +91,7 @@ def list_players(game_id: int):
 
 
 @blueprint.get(
-    "game/active/player/<uid>",
+    "active-game/player/<uid>",
 )
 def get_player_in_active_game(uid: str):
     player = logic.get_player_in_active_game(uid)

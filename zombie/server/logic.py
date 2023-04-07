@@ -13,6 +13,11 @@ def get_active_game_id() -> int | None:
     return game_id[0].game_id
 
 
+def activate_game(game_id: int) -> None:
+    queries.deactivate_game()
+    queries.activate_game(game_id=game_id)
+
+
 class Game(pydantic.BaseModel):
     id_: int
     when_created: datetime.datetime
@@ -52,16 +57,31 @@ def get_game(game_id: int) -> Game | None:
     return Game.from_game_row(games[0])
 
 
-def get_active_game() -> Game | None:
-    active_game_id = get_active_game_id()
-    if active_game_id is None:
-        return None
-    return get_game(active_game_id)
-
-
 def new_game() -> Game:
     game_id = queries.insert_game()[0].game_id
     return Game.from_game_row(queries.get_game_info(game_ids=[game_id])[0])
+
+
+class GameDetails(pydantic.BaseModel):
+    class Player(pydantic.BaseModel):
+        uid: str
+        name: str
+
+    id_: int
+    when_created: datetime.datetime
+    is_active: bool
+    players: list[Player]
+    status: str
+
+
+def get_game_details(game_id: int) -> GameDetails | None:
+    game = get_game(game_id)
+    if game is None:
+        return None
+    return GameDetails(
+        players=[],
+        **game.dict(include=["id_", "when_created", "is_active", "status"])
+    )
 
 
 class Player(pydantic.BaseModel):

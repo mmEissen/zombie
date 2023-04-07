@@ -31,7 +31,7 @@ def active_game_id():
 
 class TestDeactivateGame:
     def test_happy_path(self, active_game_id):
-        queries.deactivate_game(game_id=active_game_id)
+        queries.deactivate_game()
 
 
 class TestGetActiveGame:

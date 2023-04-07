@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Admin - Game{% endblock %}
+
+{% block html_head %}
+<script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
+<script>
+$(document).ready(function(e) {
+    var players_table = dynamicTable.config('players-table',
+        ['id_', 'when_created', 'players', 'status', 'is_active'],
+        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?'],
+        'There are no current games.');
+
+    function load_game() {
+        $.getJSON(
+            "{{ url_for('api.list_games') }}",
+            function( response ) {
+                games_table.load(response.data);
+            }
+        )
+    }
+
+    load_game();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <table id="players-table"></table>
+{% endblock %}

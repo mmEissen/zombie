@@ -44,23 +44,21 @@ Columns:
 */
 UPDATE games 
 SET is_active = false
-WHERE game_id = %(game_id)s
+WHERE game_id = (SELECT game_id FROM games WHERE is_active)
 RETURNING null AS null
 """
     @dataclasses.dataclass
     class Row:
+        pass
         null: None
 
 
     def __call__(
         self,
-        *,
-        game_id: int,
     ) -> list[Row]:
         """Columns:
         null: null"""
         params = {
-            "game_id": game_id,
         }
         return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
 
