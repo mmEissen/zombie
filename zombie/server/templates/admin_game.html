@@ -15,18 +15,14 @@ $(document).ready(function(e) {
     }
 
     (function update() {
-        setTimeout(
-            function() {
-                $.ajax({
-                    dataType: "json",
-                    url: "{{ url_for('api.get_game', game_id=game_id) }}",
-                    success: update_from_result,
-                    complete: update,
-                    timeout: 1000
-                });
-            },
-            1000,
-        )
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.get_game', game_id=game_id) }}",
+            success: update_from_result,
+            complete: setTimeout(function() {update()}, 1000),
+            timeout: 1000
+        });
+        
     })(); 
 });
 </script>
@@ -34,4 +30,5 @@ $(document).ready(function(e) {
 
 {% block content %}
     <table class="styled-table" id="players-table"></table>
+    <a href="{{ url_for('admin.root') }}">Go Back</a>
 {% endblock %}

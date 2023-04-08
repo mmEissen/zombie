@@ -63,27 +63,24 @@ $(document).ready(function(e) {
             success: function () {},
             data: JSON.stringify({name: $('#form-input-name').val(), nfc_id: $('#form-input-uid').val()}),
             contentType: 'application/json',
-            error: function () {
-                set_error("Sorry, this name already exists!");
-                $('#btn-name-submit').attr("disabled", false);
+            statusCode: {
+                409: function () {
+                    set_error("Sorry, this name already exists!");
+                    $('#btn-name-submit').attr("disabled", false);
+                }
             }
         });
     });
 
     (function update() {
-        setTimeout(
-            function() {
-                $.ajax({
-                    dataType: "json",
-                    url: "{{ url_for('api.get_player_in_active_game', uid=(uid | urlencode)) }}",
-                    success: update_from_result,
-                    error: set_state_no_active_game,
-                    complete: update,
-                    timeout: 1000
-                });
-            },
-            1000,
-        )
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.get_player_in_active_game', uid=(uid | urlencode)) }}",
+            success: update_from_result,
+            error: set_state_no_active_game,
+            complete: setTimeout(function() {update()}, 1000),
+            timeout: 1000
+        });
     })();    
 });
 </script>
@@ -111,7 +108,8 @@ $(document).ready(function(e) {
 </div>
 <div id="div-pre-game" hidden=true>
     <h1>Done</h1>
-    Thank you <span class="player-name"></span>!<br>
+    Thank you <span class="player-name"></span>!<br><br>
+    Keep this page open!<br><br>
     That's all for now. The game will be explained to you once
     all players have arrived. In the meantime, have some snacks and relax.
 </div>
