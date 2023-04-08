@@ -29,7 +29,6 @@ def put_game():
     return (
         flask.jsonify(game.dict()),
         201,
-        {"Location": flask.url_for("api.get_game", game_id=game.id_)},
     )
 
 
@@ -50,10 +49,10 @@ def put_active_game():
     "/game/<int:game_id>",
 )
 def get_game(game_id: int):
-    game = logic.get_game(game_id)
-    if game is None:
+    game_details = logic.get_game_details(game_id)
+    if game_details is None:
         return "Not Found", 404
-    return flask.jsonify(game.dict())
+    return flask.jsonify(game_details.dict())
 
 
 @blueprint.get(
@@ -90,13 +89,6 @@ def put_player():
 
 
 @blueprint.get(
-    "/game/<int:game_id>/player/list",
-)
-def list_players(game_id: int):
-    pass
-
-
-@blueprint.get(
     "active-game/player/<uid>",
 )
 def get_player_in_active_game(uid: str):
@@ -105,9 +97,21 @@ def get_player_in_active_game(uid: str):
     return flask.jsonify(player.dict())
 
 
+class PutTouchData(pydantic.BaseModel):
+    left_uid: str
+    right_uid: str
+
+
 @blueprint.put(
     "/touch",
 )
 def put_touch():
+    data = PutTouchData(**flask.request.json)
+
+    try:
+        logic.make_touch(data.left_uid, data.right_uid)
+    except logic.BadTouchError:
+        flask.abort(400)
+
     return "", 201
 

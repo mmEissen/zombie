@@ -24,6 +24,7 @@ class Game(pydantic.BaseModel):
     is_active: bool
     players: int
     status: str
+    link: str = ""
 
     @classmethod
     def from_game_row(cls, row: queries.get_game_info.Row) -> Game:
@@ -62,15 +63,15 @@ def new_game() -> Game:
     return Game.from_game_row(queries.get_game_info(game_ids=[game_id])[0])
 
 
-class GameDetails(pydantic.BaseModel):
-    class Player(pydantic.BaseModel):
+class GameDetailsPlayer(pydantic.BaseModel):
         uid: str
         name: str
 
+class GameDetails(pydantic.BaseModel):
     id_: int
     when_created: datetime.datetime
     is_active: bool
-    players: list[Player]
+    players: list[GameDetailsPlayer]
     status: str
 
 
@@ -78,15 +79,21 @@ def get_game_details(game_id: int) -> GameDetails | None:
     game = get_game(game_id)
     if game is None:
         return None
+    players = queries.list_players_in_game(game_id=game_id)
     return GameDetails(
-        players=[],
-        **game.dict(include=["id_", "when_created", "is_active", "status"])
+        players=[
+            GameDetailsPlayer(uid=player.nfc_id, name=player.name)
+            for player in players
+        ],
+        **game.dict(include={"id_", "when_created", "is_active", "status"})
     )
 
 
 class Player(pydantic.BaseModel):
     game_id: int | None = None
     name: str | None = None
+    round_number: int | None = None
+    round_ended: bool = True
 
 
 def get_player_in_active_game(uid: str) -> Player:
@@ -94,10 +101,25 @@ def get_player_in_active_game(uid: str) -> Player:
     if not players:
         return Player()
     player = players[0]
-    return Player(
+
+    player_in_game = Player(
         game_id=player.game_id,
         name=player.name,
     )
+
+    if player.game_id is None:
+        return player_in_game
+
+    games = queries.get_game_info(game_ids=[player.game_id])
+    if not games:
+        return player_in_game
+    
+    game = games[0]
+    
+    player_in_game.round_number = game.round_number
+    player_in_game.round_ended = game.round_ended
+
+    return player_in_game
 
 
 class PlayerNameExistsError(Exception):
@@ -109,3 +131,15 @@ def create_player_in_active_game(name: str, nfc_id: str) -> None:
         queries.insert_player(name=name, nfc_id=nfc_id)
     except psycopg2.errors.UniqueViolation as e:
         raise PlayerNameExistsError() from e
+
+
+class BadTouchError(Exception):
+    """Sweat baby, sweat baby"""
+    pass
+
+
+def make_touch(left_nfc: str, right_nfc: str) -> None:
+    try:
+        queries.insert_touch(left_player_nfc=left_nfc, right_player_nfc=right_nfc)
+    except psycopg2.errors.IntegrityError:
+        raise BadTouchError()

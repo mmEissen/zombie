@@ -6,24 +6,32 @@
 <script>
 $(document).ready(function(e) {
     var players_table = dynamicTable.config('players-table',
-        ['id_', 'when_created', 'players', 'status', 'is_active'],
-        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?'],
-        'There are no current games.');
+        ['name', 'uid'],
+        ["Name", "NFC ID"],
+        'There are no players in this game.');
 
-    function load_game() {
-        $.getJSON(
-            "{{ url_for('api.list_games') }}",
-            function( response ) {
-                games_table.load(response.data);
-            }
-        )
+    function update_from_result(response) {
+        players_table.load(response.players)
     }
 
-    load_game();
+    (function update() {
+        setTimeout(
+            function() {
+                $.ajax({
+                    dataType: "json",
+                    url: "{{ url_for('api.get_game', game_id=game_id) }}",
+                    success: update_from_result,
+                    complete: update,
+                    timeout: 1000
+                });
+            },
+            1000,
+        )
+    })(); 
 });
 </script>
 {% endblock %}
 
 {% block content %}
-    <table id="players-table"></table>
+    <table class="styled-table" id="players-table"></table>
 {% endblock %}

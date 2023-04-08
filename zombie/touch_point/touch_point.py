@@ -17,7 +17,8 @@ class TouchPoint:
     _right_uid: str = ""
     _confirmed_progress: int = 0
     _enter_time: int = 0
-    _was_confirmed = False
+    _was_confirmed: bool = False
+    _error: bool = False
 
     def __post_init__(self) -> None:
         self._lock = threading.Lock()
@@ -48,6 +49,16 @@ class TouchPoint:
     def right_uid(self, value: str) -> None:
         with self._lock:
             self._right_uid = value
+
+    @property
+    def error(self) -> bool:
+        with self._lock:
+            return self._error
+    
+    @error.setter
+    def error(self, value: bool) -> None:
+        with self._lock:
+            self._error = value
     
     def _url(self, uid: str) -> str:
         query = {"uid": uid}
@@ -81,6 +92,7 @@ class TouchPoint:
     def _on_one_exit(self):
         self._enter_time = 0
         self.confirmed_progress = 0
+        self.error = False
 
     def enter_left(self, uid: str) -> None:
         self.left_uid = uid
@@ -101,13 +113,15 @@ class TouchPoint:
         self._on_one_exit()
 
     def _register_touch(self) -> None:
-        requests.put(
+        response = requests.put(
             f"{self.server_url}/api/touch",
             json={
                 "left_uid": self._left_uid,
                 "right_uid": self._right_uid,
             },
         )
+        if response.status_code >= 400:
+            self._error = True
 
     def loop(self) -> None:
         with self._lock:

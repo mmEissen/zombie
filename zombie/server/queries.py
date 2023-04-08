@@ -163,7 +163,7 @@ SELECT
     games.game_id AS game_id,
     players.name AS name
 FROM games
-JOIN players ON players.game_id = games.game_id AND players.nfc_id = %(nfc_id)s
+LEFT OUTER JOIN players ON players.game_id = games.game_id AND players.nfc_id = %(nfc_id)s
 WHERE games.is_active
 """
     @dataclasses.dataclass
@@ -242,6 +242,59 @@ RETURNING player_id
 
 insert_player = _insert_player()
 
+class _insert_touch:
+    _STATEMENT = r"""
+/*
+ Columns:
+ game_id: bigint
+ */
+INSERT INTO touches (round_id, left_player, right_player)
+VALUES (
+        (
+            SELECT round_id
+            FROM rounds
+                INNER JOIN games ON games.game_id = rounds.round_id
+                AND rounds.when_ended IS NULL
+                AND games.is_active
+        ),
+        (
+            SELECT player_id
+            FROM players
+            JOIN games ON games.game_id = players.game_id
+            WHERE nfc_id = %(left_player_nfc)s
+            AND games.is_active
+        ),
+        (
+            SELECT player_id
+            FROM players
+            JOIN games ON games.game_id = players.game_id
+            WHERE nfc_id = %(right_player_nfc)s
+            AND games.is_active
+        )
+    )
+RETURNING touch_id
+"""
+    @dataclasses.dataclass
+    class Row:
+        game_id: int
+
+
+    def __call__(
+        self,
+        *,
+        left_player_nfc: str,
+        right_player_nfc: str,
+    ) -> list[Row]:
+        """Columns:
+     game_id: bigint"""
+        params = {
+            "left_player_nfc": left_player_nfc,
+            "right_player_nfc": right_player_nfc,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+insert_touch = _insert_touch()
+
 class _list_games:
     _STATEMENT = r"""
 SELECT 
@@ -272,6 +325,34 @@ LIMIT %(count)s
         return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
 
 list_games = _list_games()
+
+class _list_players_in_game:
+    _STATEMENT = r"""
+SELECT 
+    players.name AS name, 
+    players.nfc_id AS nfc_id
+FROM players
+WHERE players.game_id = %(game_id)s
+ORDER BY players.name
+"""
+    @dataclasses.dataclass
+    class Row:
+        name: str
+        nfc_id: str
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+    ) -> list[Row]:
+        """"""
+        params = {
+            "game_id": game_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+list_players_in_game = _list_players_in_game()
 
 class _start_round:
     _STATEMENT = r"""

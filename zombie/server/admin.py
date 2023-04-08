@@ -6,9 +6,7 @@ blueprint = flask.Blueprint("admin", __name__, template_folder="templates", url_
 
 @blueprint.route("/")
 def root():
-    games = logic.list_games()
-
-    return flask.render_template("admin_home.html", games=games)
+    return flask.render_template("admin_home.html")
 
 
 @blueprint.route("/game/<int:game_id>")

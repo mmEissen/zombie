@@ -13,6 +13,7 @@ class Screen:
         ACTIVE_COLOR = "#0000FF"
         INACTIVE_COLOR = "#AAAAAA"
         CONFIRMED_COLOR = "#00FF00"
+        ERROR_COLOR = "#FF0000"
 
         def __init__(self, parent: tkinter.Tk) -> None:
             self.root = tkinter.Frame(
@@ -47,6 +48,11 @@ class Screen:
             self.left_label.configure(image=self.left_image)
             self.right_label.configure(image=self.right_image)
             
+            if model.error:
+                self.left.configure(background=self.ERROR_COLOR)
+                self.right.configure(background=self.ERROR_COLOR)
+                return
+
             if confirmed:
                 self.left.configure(background=self.CONFIRMED_COLOR)
                 self.right.configure(background=self.CONFIRMED_COLOR)

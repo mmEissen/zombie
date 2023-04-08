@@ -9,7 +9,12 @@ var games_table;
 function active_button(item) {
     var is_active = item.is_active;
     var text = is_active ? "YES" : "NO"
-    return "<button onclick=\"activate_game(" + item.id_ + ")\">" + text + "</button>";
+    return "<button class=\"button\" onclick=\"activate_game(" + item.id_ + ")\">" + text + "</button>";
+}
+
+function game_link(item) {
+    var game_id = item.id_;
+    return "<a href='game/" + game_id +"'>Show Game</a>"
 }
 
 function load_games() {
@@ -34,8 +39,8 @@ function activate_game(game_id) {
 
 $(document).ready(function(e) {
     games_table = dynamicTable.config('games-table',
-        ['id_', 'when_created', 'players', 'status', active_button],
-        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?'],
+        ['id_', 'when_created', 'players', 'status', active_button, game_link],
+        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?', "Link"],
         'There are no current games.');
 
 
@@ -54,6 +59,10 @@ $(document).ready(function(e) {
 {% endblock %}
 
 {% block content %}
-    <button id="btn-new-game">New Game</button>
-    <table id="games-table"></table>
+<div>
+    <table class="styled-table" id="games-table"></table>
+</div>
+<div>
+    <button class="button" id="btn-new-game">New Game</button><br>
+</div>
 {% endblock %}

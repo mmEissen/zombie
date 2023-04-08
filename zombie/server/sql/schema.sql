@@ -50,5 +50,7 @@ CREATE TABLE IF NOT EXISTS touches (
     round_id BIGINT NOT NULL references rounds(round_id),
     when_touched TIMESTAMP NOT NULL DEFAULT now(),
     left_player BIGINT NOT NULL references players(player_id),
-    right_player BIGINT NOT NULL references players(player_id)
+    right_player BIGINT NOT NULL references players(player_id),
+
+    UNIQUE (round_id, left_player, right_player)
 );
