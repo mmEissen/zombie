@@ -80,8 +80,6 @@ button[disabled]{
     color: #c0c0c0;
 }
 
-
-
 input[type=text] {
     width: 100%;
     padding: 12px 20px;
@@ -95,6 +93,22 @@ input[type=text] {
 }
 
 input[type=text]:focus {
+    border: 5px solid #116139;
+}
+
+
+input[type=number] {
+    padding: 12px 20px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 5px solid #074a28;
+    -webkit-transition: 0.1s;
+    transition: 0.1s;
+    outline: none;
+    font-size: 18pt;
+}
+
+input[type=number]:focus {
     border: 5px solid #116139;
 }
 
