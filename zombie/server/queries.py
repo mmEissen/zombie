@@ -122,6 +122,7 @@ SELECT
     games.game_id as game_id,
     games.when_created as when_created,
     games.is_active as is_active,
+    games.is_started as is_started,
     count(players.player_id) as player_count,
     coalesce(max(rounds.round_number), 0) as round_number,
     CASE
@@ -139,6 +140,7 @@ GROUP BY games.game_id
         game_id: int
         when_created: datetime.datetime
         is_active: bool
+        is_started: bool
         player_count: int
         round_number: int
         round_ended: bool
@@ -217,7 +219,7 @@ Columns:
     player_id: bigint
 */
 INSERT INTO players (game_id, name, nfc_id) 
-VALUES ((SELECT game_id FROM games WHERE is_active), %(name)s, %(nfc_id)s)
+VALUES ((SELECT game_id FROM games WHERE games.is_active AND NOT games.is_started), %(name)s, %(nfc_id)s)
 ON CONFLICT (game_id, nfc_id) DO UPDATE SET name = %(name)s
 RETURNING player_id
 """
@@ -256,6 +258,7 @@ VALUES (
                 INNER JOIN games ON games.game_id = rounds.round_id
                 AND rounds.when_ended IS NULL
                 AND games.is_active
+                AND games.is_started
         ),
         (
             SELECT player_id
@@ -354,14 +357,117 @@ ORDER BY players.name
 
 list_players_in_game = _list_players_in_game()
 
-class _start_round:
+class _list_rounds_in_game:
+    _STATEMENT = r"""
+SELECT 
+    round_id AS round_id,
+    round_number AS round_number,
+    when_started AS when_started,
+    when_ended AS when_ended
+FROM rounds
+WHERE game_id = %(game_id)s
+ORDER BY round_number
+"""
+    @dataclasses.dataclass
+    class Row:
+        round_id: int
+        round_number: int
+        when_started: datetime.datetime
+        when_ended: datetime.datetime
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+    ) -> list[Row]:
+        """"""
+        params = {
+            "game_id": game_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+list_rounds_in_game = _list_rounds_in_game()
+
+class _list_touches:
+    _STATEMENT = r"""
+SELECT 
+    left_player.player_id AS left_player_id,
+    left_player.name AS left_player_name,
+    right_player.player_id AS right_player_id,
+    right_player.name AS right_player_name
+FROM touches
+JOIN players AS left_player ON touches.left_player = left_player.player_id
+JOIN players AS right_player ON touches.right_player = right_player.player_id
+JOIN rounds ON touches.round_id = rounds.round_id
+WHERE rounds.game_id = %(game_id)s
+"""
+    @dataclasses.dataclass
+    class Row:
+        left_player_id: int
+        right_player_id: int
+        left_player_name: str
+        right_player_name: str
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+    ) -> list[Row]:
+        """"""
+        params = {
+            "game_id": game_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+list_touches = _list_touches()
+
+class _start_game:
     _STATEMENT = r"""
 /*
 Columns:
-    round_id: bigint
+    game_id: bigint
 */
+UPDATE games
+SET is_started = true
+WHERE game_id = %(game_id)s
+RETURNING game_id
+"""
+    @dataclasses.dataclass
+    class Row:
+        game_id: int
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+    ) -> list[Row]:
+        """Columns:
+        game_id: bigint"""
+        params = {
+            "game_id": game_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+start_game = _start_game()
+
+class _start_round:
+    _STATEMENT = r"""
+/*
+ Columns:
+ round_id: bigint
+ */
 INSERT INTO rounds (game_id, round_number)
-VALUES (%(game_id)s, (SELECT coalesce(max(rounds.round_number), 0) + 1 FROM rounds WHERE game_id = %(game_id)s))
+VALUES (
+        %(game_id)s,
+        (
+            SELECT coalesce(max(rounds.round_number), 0) + 1
+            FROM rounds
+            WHERE game_id = %(game_id)s
+        )
+    )
 RETURNING round_id
 """
     @dataclasses.dataclass
@@ -375,7 +481,7 @@ RETURNING round_id
         game_id: int,
     ) -> list[Row]:
         """Columns:
-        round_id: bigint"""
+     round_id: bigint"""
         params = {
             "game_id": game_id,
         }

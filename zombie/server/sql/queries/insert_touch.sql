@@ -10,6 +10,7 @@ VALUES (
                 INNER JOIN games ON games.game_id = rounds.round_id
                 AND rounds.when_ended IS NULL
                 AND games.is_active
+                AND games.is_started
         ),
         (
             SELECT player_id

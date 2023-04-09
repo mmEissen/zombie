@@ -68,11 +68,19 @@ div {
     cursor: pointer;
 }
 
-.button:hover {
+.button:hover:enabled {
     background-color: #116139;
     /* Green */
     color: white;
 }
+
+button:disabled,
+button[disabled]{
+    background-color: #5b6a62;
+    color: #c0c0c0;
+}
+
+
 
 input[type=text] {
     width: 100%;

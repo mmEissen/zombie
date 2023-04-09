@@ -115,3 +115,11 @@ def put_touch():
 
     return "", 201
 
+
+@blueprint.post(
+    "/games/<int:game_id>/start",
+)
+def start_game(game_id: int):
+    logic.start_game(game_id)
+
+    return "", 201

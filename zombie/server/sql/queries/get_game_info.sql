@@ -2,6 +2,7 @@ SELECT
     games.game_id as game_id,
     games.when_created as when_created,
     games.is_active as is_active,
+    games.is_started as is_started,
     count(players.player_id) as player_count,
     coalesce(max(rounds.round_number), 0) as round_number,
     CASE

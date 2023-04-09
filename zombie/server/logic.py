@@ -22,6 +22,7 @@ class Game(pydantic.BaseModel):
     id_: int
     when_created: datetime.datetime
     is_active: bool
+    is_started: bool
     players: int
     status: str
     link: str = ""
@@ -40,6 +41,7 @@ class Game(pydantic.BaseModel):
             id_=row.game_id,
             when_created=row.when_created,
             is_active=row.is_active,
+            is_started=row.is_started,
             players=row.player_count,
             status=status,
         )
@@ -64,14 +66,24 @@ def new_game() -> Game:
 
 
 class GameDetailsPlayer(pydantic.BaseModel):
-        uid: str
-        name: str
+    uid: str
+    name: str
+
+
+class GameDetailsRound(pydantic.BaseModel):
+    round_id: int
+    round_number: int
+    when_started: datetime.datetime
+    when_ended: datetime.datetime | None
+
 
 class GameDetails(pydantic.BaseModel):
     id_: int
     when_created: datetime.datetime
     is_active: bool
+    is_started: bool
     players: list[GameDetailsPlayer]
+    rounds: list[GameDetailsRound]
     status: str
 
 
@@ -80,12 +92,21 @@ def get_game_details(game_id: int) -> GameDetails | None:
     if game is None:
         return None
     players = queries.list_players_in_game(game_id=game_id)
+    rounds = queries.list_rounds_in_game(game_id=game_id)
     return GameDetails(
         players=[
-            GameDetailsPlayer(uid=player.nfc_id, name=player.name)
-            for player in players
+            GameDetailsPlayer(uid=player.nfc_id, name=player.name) for player in players
         ],
-        **game.dict(include={"id_", "when_created", "is_active", "status"})
+        rounds=[
+            GameDetailsRound(
+                round_id=round_.round_id,
+                round_number=round_.round_number,
+                when_started=round_.when_started,
+                when_ended=round_.when_ended,
+            )
+            for round_ in rounds
+        ],
+        **game.dict(include={"id_", "when_created", "is_active", "status", "is_started"}),
     )
 
 
@@ -113,9 +134,9 @@ def get_player_in_active_game(uid: str) -> Player:
     games = queries.get_game_info(game_ids=[player.game_id])
     if not games:
         return player_in_game
-    
+
     game = games[0]
-    
+
     player_in_game.round_number = game.round_number
     player_in_game.round_ended = game.round_ended
 
@@ -135,7 +156,7 @@ def create_player_in_active_game(name: str, nfc_id: str) -> None:
 
 class BadTouchError(Exception):
     """Sweat baby, sweat baby"""
-    pass
+
 
 
 def make_touch(left_nfc: str, right_nfc: str) -> None:
@@ -143,3 +164,7 @@ def make_touch(left_nfc: str, right_nfc: str) -> None:
         queries.insert_touch(left_player_nfc=left_nfc, right_player_nfc=right_nfc)
     except psycopg2.errors.IntegrityError:
         raise BadTouchError()
+
+
+def start_game(game_id: int) -> None:
+    queries.start_game(game_id=game_id)

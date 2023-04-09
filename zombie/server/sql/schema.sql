@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS games (
     game_id BIGSERIAL PRIMARY KEY,
     when_created TIMESTAMP DEFAULT now(),
 
-    is_active BOOLEAN NOT NULL DEFAULT false
+    is_active BOOLEAN NOT NULL DEFAULT false,
+    is_started BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_game ON games(is_active) WHERE is_active = true;

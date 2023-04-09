@@ -9,9 +9,16 @@ $(document).ready(function(e) {
         ['name', 'uid'],
         ["Name", "NFC ID"],
         'There are no players in this game.');
+    
+    var rounds_table = dynamicTable.config('rounds-table',
+        ['round_number', 'when_started', 'when_ended'],
+        ["Round Number", "When Started", "When Ended"],
+        'This game has no rounds yet');
 
     function update_from_result(response) {
-        players_table.load(response.players)
+        players_table.load(response.players);
+        rounds_table.load(response.rounds);
+        $('#btn-start-game').attr("disabled", response.is_started);
     }
 
     (function update() {
@@ -22,13 +29,38 @@ $(document).ready(function(e) {
             complete: setTimeout(function() {update()}, 1000),
             timeout: 1000
         });
-        
-    })(); 
+    })();
+
+    $('#btn-start-game').click(function(e) {
+        $('#btn-start-game').attr("disabled", true);
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.start_game', game_id=game_id) }}",
+            type: "POST",
+        });
+    });
 });
 </script>
 {% endblock %}
 
 {% block content %}
-    <table class="styled-table" id="players-table"></table>
+<h1>Game Overview</h1>
+<div>
     <a href="{{ url_for('admin.root') }}">Go Back</a>
+</div>
+<h2>Controls</h2>
+<div>
+    <button class="button" id="btn-start-game">Start Game</button><br>
+</div>
+<div>
+    <h2>Rounds</h2>
+    <table class="styled-table" id="rounds-table"></table>
+</div>
+<div>
+    <h2>Players</h2>
+    <table class="styled-table" id="players-table"></table>
+</div>
+<div>
+    <a href="{{ url_for('admin.root') }}">Go Back</a>
+</div>
 {% endblock %}
