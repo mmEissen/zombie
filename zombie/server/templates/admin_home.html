@@ -38,9 +38,9 @@ function activate_game(game_id) {
 }
 
 $(document).ready(function(e) {
-    games_table = dynamicTable.config('games-table',
-        ['id_', 'when_created', 'players', 'status', active_button, game_link],
-        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?', "Link"],
+    games_table = DynamicTable().config('games-table',
+        ['id_', 'when_created', 'players', 'status', active_button, game_link, 'is_started'],
+        ['Game ID', 'Created', 'Player Count', 'Satus', 'Active?', "Link", "Started?"],
         'There are no current games.');
 
 
@@ -59,6 +59,7 @@ $(document).ready(function(e) {
 {% endblock %}
 
 {% block content %}
+<h1>Game List</h1>
 <div>
     <table class="styled-table" id="games-table"></table>
 </div>

@@ -5,20 +5,20 @@
 <script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
 <script>
 $(document).ready(function(e) {
-    var players_table = dynamicTable.config('players-table',
+    var players_table = DynamicTable().config('players-table',
         ['name', 'uid'],
         ["Name", "NFC ID"],
         'There are no players in this game.');
     
-    var rounds_table = dynamicTable.config('rounds-table',
+    var rounds_table = DynamicTable().config('rounds-table',
         ['round_number', 'when_started', 'when_ended'],
         ["Round Number", "When Started", "When Ended"],
         'This game has no rounds yet');
 
-    function update_from_result(response) {
-        players_table.load(response.players);
-        rounds_table.load(response.rounds);
-        $('#btn-start-game').attr("disabled", response.is_started);
+    function update_from_result(data) {
+        players_table.load(data.players);
+        rounds_table.load(data.rounds);
+        $('#btn-start-game').attr("disabled", data.is_started);
     }
 
     (function update() {

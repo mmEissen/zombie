@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS players (
     name TEXT NOT NULL,
     nfc_id TEXT NOT NULL,
 
+    is_initial_zombie NOT NULL BOOLEAN DEFAULT false;
+
     UNIQUE (game_id, name),
     UNIQUE (game_id, nfc_id)
 );

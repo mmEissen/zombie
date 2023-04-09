@@ -1,4 +1,4 @@
-var dynamicTable = (function () {
+function DynamicTable () {
 
     var _tableId, _table,
         _fields, _headers,
@@ -85,4 +85,4 @@ var dynamicTable = (function () {
             return this;
         }
     };
-}());
+};
