@@ -332,16 +332,20 @@ list_games = _list_games()
 class _list_players_in_game:
     _STATEMENT = r"""
 SELECT 
-    players.name AS name, 
-    players.nfc_id AS nfc_id
+    players.player_id AS player_id,
+    players.is_initial_zombie AS is_initial_zombie,
+    players.nfc_id AS nfc_id,
+    players.name AS name
 FROM players
 WHERE players.game_id = %(game_id)s
 ORDER BY players.name
 """
     @dataclasses.dataclass
     class Row:
-        name: str
+        player_id: int
+        is_initial_zombie: bool
         nfc_id: str
+        name: str
 
 
     def __call__(
@@ -423,6 +427,43 @@ WHERE rounds.game_id = %(game_id)s
 
 list_touches = _list_touches()
 
+class _make_random_zombie:
+    _STATEMENT = r"""
+/*
+Columns:
+    player_id: bigint
+*/
+UPDATE players
+SET is_initial_zombie = true
+WHERE players.player_id in (
+    SELECT players.player_id
+    FROM players
+    WHERE players.game_id = %(game_id)s
+    ORDER BY random()
+    LIMIT coalesce(%(number_zombies)s, 1)
+)
+"""
+    @dataclasses.dataclass
+    class Row:
+        player_id: int
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+        number_zombies: int,
+    ) -> list[Row]:
+        """Columns:
+        player_id: bigint"""
+        params = {
+            "game_id": game_id,
+            "number_zombies": number_zombies,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+make_random_zombie = _make_random_zombie()
+
 class _start_game:
     _STATEMENT = r"""
 /*
@@ -488,4 +529,34 @@ RETURNING round_id
         return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
 
 start_round = _start_round()
+
+class _toggle_zombie:
+    _STATEMENT = r"""
+/*
+Columns:
+    player_id: bigint
+*/
+UPDATE players
+SET is_initial_zombie = NOT is_initial_zombie
+WHERE players.player_id = %(player_id)s
+RETURNING player_id
+"""
+    @dataclasses.dataclass
+    class Row:
+        player_id: int
+
+
+    def __call__(
+        self,
+        *,
+        player_id: int,
+    ) -> list[Row]:
+        """Columns:
+        player_id: bigint"""
+        params = {
+            "player_id": player_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+toggle_zombie = _toggle_zombie()
 

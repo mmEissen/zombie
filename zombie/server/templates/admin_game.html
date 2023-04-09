@@ -4,10 +4,27 @@
 {% block html_head %}
 <script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
 <script>
+
+function toggle_zombie(player_id) {
+    $.ajax({
+        dataType: "json",
+        url: "{{ url_for('api.toggle_zombie') }}",
+        type: "POST",
+        data: JSON.stringify({player_id: player_id}),
+        contentType: 'application/json',
+    });
+}
+
 $(document).ready(function(e) {
+    function zombie_toggle(player) {
+        var is_zombie = player.is_initial_zombie;
+        var text = is_zombie ? "Zombie" : "Human";
+        return "<button class=\"button\" onclick=\"toggle_zombie(" + player.player_id + ")\">" + text + "</button>";
+    }
+
     var players_table = DynamicTable().config('players-table',
-        ['name', 'uid'],
-        ["Name", "NFC ID"],
+        ['name', 'uid', zombie_toggle],
+        ["Name", "NFC ID", "Role"],
         'There are no players in this game.');
     
     var rounds_table = DynamicTable().config('rounds-table',

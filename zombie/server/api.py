@@ -123,3 +123,30 @@ def start_game(game_id: int):
     logic.start_game(game_id)
 
     return "", 201
+
+
+class MakeZombiesData(pydantic.BaseModel):
+    number_zombies: int
+
+@blueprint.post(
+    "/games/<int:game_id>/make-zombies",
+)
+def make_zombies(game_id: int):
+    data = MakeZombiesData(**flask.request.json)
+    logic.make_zombies(game_id, data.number_zombies)
+
+    return "", 201
+
+
+class ToggleZombiesData(pydantic.BaseModel):
+    player_id: int
+
+
+@blueprint.post(
+    "/toggle-zombie",
+)
+def toggle_zombie():
+    data = ToggleZombiesData(**flask.request.json)
+    logic.toggle_zombie(data.player_id)
+
+    return "", 201

@@ -66,8 +66,10 @@ def new_game() -> Game:
 
 
 class GameDetailsPlayer(pydantic.BaseModel):
+    player_id: int
     uid: str
     name: str
+    is_initial_zombie: bool
 
 
 class GameDetailsRound(pydantic.BaseModel):
@@ -95,7 +97,13 @@ def get_game_details(game_id: int) -> GameDetails | None:
     rounds = queries.list_rounds_in_game(game_id=game_id)
     return GameDetails(
         players=[
-            GameDetailsPlayer(uid=player.nfc_id, name=player.name) for player in players
+            GameDetailsPlayer(
+                player_id=player.player_id,
+                uid=player.nfc_id,
+                name=player.name,
+                is_initial_zombie=player.is_initial_zombie,
+            )
+            for player in players
         ],
         rounds=[
             GameDetailsRound(
@@ -106,7 +114,9 @@ def get_game_details(game_id: int) -> GameDetails | None:
             )
             for round_ in rounds
         ],
-        **game.dict(include={"id_", "when_created", "is_active", "status", "is_started"}),
+        **game.dict(
+            include={"id_", "when_created", "is_active", "status", "is_started"}
+        ),
     )
 
 
@@ -158,7 +168,6 @@ class BadTouchError(Exception):
     """Sweat baby, sweat baby"""
 
 
-
 def make_touch(left_nfc: str, right_nfc: str) -> None:
     try:
         queries.insert_touch(left_player_nfc=left_nfc, right_player_nfc=right_nfc)
@@ -168,3 +177,11 @@ def make_touch(left_nfc: str, right_nfc: str) -> None:
 
 def start_game(game_id: int) -> None:
     queries.start_game(game_id=game_id)
+
+
+def make_zombies(game_id: int, number_zombies: int) -> None:
+    queries.make_random_zombie(game_id=game_id, number_zombies=number_zombies)
+
+
+def toggle_zombie(player_id: int) -> None:
+    queries.toggle_zombie(player_id=player_id)
