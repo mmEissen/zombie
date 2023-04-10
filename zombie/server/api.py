@@ -37,12 +37,25 @@ class PutActiveGame(pydantic.BaseModel):
 
 
 @blueprint.put(
-        "/active-game"
+    "/active-game"
 )
 def put_active_game():
     active_game = PutActiveGame(**flask.request.json)
     logic.activate_game(active_game.game_id)
     return "", 204
+
+
+@blueprint.get(
+    "/active-game",
+)
+def get_active_game():
+    game_id = logic.get_active_game_id()
+    if game_id is None:
+        return "Not Found", 404
+    game_details = logic.get_game_details(game_id)
+    if game_details is None:
+        return "Not Found", 404
+    return flask.jsonify(game_details.dict())
 
 
 @blueprint.get(
@@ -168,3 +181,23 @@ def end_round(game_id: int):
     logic.end_round(game_id)
 
     return "", 201
+
+
+@blueprint.get(
+    "active-game/leader-board-anonymized"
+)
+def get_anonymous_leader_board():
+    leader_board = logic.get_leader_board()
+    for entry in leader_board:
+        entry.name = ""
+
+    return flask.jsonify([entry.dict() for entry in leader_board])
+
+
+@blueprint.get(
+    "active-game/leader-board"
+)
+def get_leader_board():
+    leader_board = logic.get_leader_board()
+    
+    return flask.jsonify([entry.dict() for entry in leader_board])

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Score Screen{% endblock %}
+
+{% block html_head %}
+<script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
+<script>
+
+$(document).ready(function(e) {
+    var current_state_div = $('#no-scores');
+
+    function set_current_state_div (new_state) {
+        current_state_div.attr("hidden", true);
+        current_state_div = new_state;
+        current_state_div.attr("hidden", false);
+    }
+
+    function redacted(item) {
+        return "<span class=\"span-redacted\">REDACTED</span>"
+    }
+
+    function points(item) {
+        if (item.is_initial_zombie) {
+            return "<img src='{{ url_for('static', filename='zombie.png') }}' class='zombie-logo'></img>"
+        }
+        if (item.is_zombie) {
+            return "<img src='{{ url_for('static', filename='biohazard.png') }}' class='zombie-logo'></img>"
+        }
+        return "<span class=\"points\">" + item.points + "</span>"
+    }
+
+    var round_scores_table = DynamicTable().config('round-scores-table',
+        [redacted, points],
+        ["Name", "Points"],
+        'There are no players in this game.');
+
+    var final_scores_table = DynamicTable().config('final-scores-table',
+        ['name', points],
+        ["Name", "Points"],
+        'There are no players in this game.');
+
+    function show_no_scores() {
+        set_current_state_div($('#no-scores'));
+    }
+
+    function show_round_scores(scores) {
+        round_scores_table.load(scores);
+        set_current_state_div($('#round-scores'));
+    }
+
+    function show_final_scores(scores) {
+        final_scores_table.load(scores);
+        set_current_state_div($('#final-scores'));
+    }
+
+    function update_from_result(data) {
+        var is_game_over = (
+            data.rounds.length === 3 && data.rounds[data.rounds.length - 1].when_ended !== null
+        );
+        var is_round_over = (
+            data.rounds.length > 0 && data.rounds[data.rounds.length - 1].when_ended !== null && !is_game_over
+        );
+
+        if (is_round_over) {
+            $.ajax({
+                dataType: "json",
+                url: "{{ url_for('api.get_anonymous_leader_board') }}",
+                success: show_round_scores,
+                timeout: 1000
+            });
+        } else if (is_game_over) {
+            $.ajax({
+                dataType: "json",
+                url: "{{ url_for('api.get_leader_board') }}",
+                success: show_final_scores,
+                timeout: 1000
+            });
+        } else {
+            show_no_scores();
+        }
+    }
+
+    (function update() {
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.get_active_game') }}",
+            success: update_from_result,
+            complete: setTimeout(function() {update()}, 1000),
+            timeout: 1000
+        });
+    })();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<h1>Scores</h1>
+<div id="no-scores">
+    No scores to display right now.
+</div>
+<div id="round-scores" hidden="hidden">
+    <table class="styled-table" id="round-scores-table"></table>
+</div>
+<div id="final-scores" hidden="hidden">
+    <table class="styled-table" id="final-scores-table"></table>
+</div>
+<footer>
+    <a href="https://www.flaticon.com/free-icons/zombie" title="zombie icons">Zombie icons created by Smashicons - Flaticon</a><br>
+    <a href="https://www.flaticon.com/free-icons/biohazard" title="biohazard icons">Biohazard icons created by Freepik - Flaticon</a>
+</footer>
+{% endblock %}

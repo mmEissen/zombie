@@ -2,6 +2,11 @@ body {
     background: #2c2c2c;
 }
 
+footer {
+    font-size: 9pt;
+    margin-top: 10em;
+}
+
 div {
     text-align: center;
 }
@@ -18,6 +23,7 @@ div {
     margin: 25px 0;
     font-size: 0.9em;
     min-width: 400px;
+    margin: 0px auto;
 }
 
 
@@ -34,6 +40,7 @@ div {
 .styled-table th,
 .styled-table td {
     padding: 12px 15px;
+    text-align: center;
 }
 
 .styled-table tbody tr {
@@ -135,7 +142,25 @@ input[type="number"] {
        -moz-appearance: textfield;
             appearance: textfield;
   }
-  input[type=number]::-webkit-inner-spin-button, 
-  input[type=number]::-webkit-outer-spin-button { 
-    -webkit-appearance: none;
-  }
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+-webkit-appearance: none;
+}
+
+
+.span-redacted {
+    background-image: url("redacted.png");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    padding: 0.4em 2em 0.4em 2em;
+}
+
+.zombie-logo {
+    width: 3em;
+    height: 3em;
+}
+
+.points {
+    font-size: 3em;
+}

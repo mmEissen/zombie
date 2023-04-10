@@ -1,6 +1,9 @@
 from __future__ import annotations
+import collections
+import dataclasses
 
 import datetime
+import itertools
 import pydantic
 from zombie.server import queries
 import psycopg2.errors
@@ -195,3 +198,85 @@ def start_round(game_id: int) -> None:
 
 def end_round(game_id: int) -> None:
     queries.end_round(game_id=game_id)
+
+
+class LeaderBoardEntry(pydantic.BaseModel):
+    name: str
+    points: int
+    is_zombie: bool
+    is_initial_zombie: bool
+
+
+def get_leader_board() -> list[LeaderBoardEntry]:
+    active_game_id = get_active_game_id()
+    if activate_game is None:
+        return []
+    rounds = queries.list_rounds_in_game(game_id=active_game_id)
+    touches = queries.list_touches(game_id=active_game_id)
+    players = queries.list_players_in_game(game_id=active_game_id)
+    player_ids = {player.player_id for player in players}
+    initial_zombie_ids = {
+        player.player_id for player in players if player.is_initial_zombie
+    }
+
+    human_points = calculate_human_points(
+        touches, player_ids, initial_zombie_ids, len(rounds)
+    )
+
+    entries = [
+        LeaderBoardEntry(
+            name=player.name,
+            points=human_points.get(player.player_id, 0),
+            is_zombie=player.player_id not in human_points,
+            is_initial_zombie=player.player_id in initial_zombie_ids,
+        )
+        for player in players
+    ]
+
+    return sorted(entries, key=lambda e: e.points or e.is_initial_zombie, reverse=True)
+
+
+def calculate_human_points(
+    touches: list[queries.list_touches.Row],
+    player_ids: set[int],
+    initial_zombie_ids: set[int],
+    rounds: int,
+) -> dict[int, int]:
+    zombies = set(initial_zombie_ids)
+    humans = player_ids - zombies
+
+    touch_events = sorted(touches, key=lambda touch: touch.when_touched)
+
+    points = collections.defaultdict(int)
+    when_turned_zombie = {
+        zombie: datetime.datetime(datetime.MINYEAR, 1, 1) for zombie in zombies
+    }
+
+    rounds_and_touches = [
+        (round_, [touch for touch in touch_events if touch.round_number == round_])
+        for round_ in range(1, rounds + 1)
+    ]
+
+    for round_, touches_in_round in rounds_and_touches:
+        untouched = set(humans)
+        for touch in touches_in_round:
+            points[touch.left_player_id] += 1
+            points[touch.right_player_id] += 1
+            participants = {touch.left_player_id, touch.right_player_id}
+            if touch.left_player_id in zombies or touch.right_player_id in zombies:
+                zombies |= participants
+                when_turned_zombie[touch.left_player_id] = (
+                    when_turned_zombie.get(touch.left_player_id) or touch.when_touched
+                )
+                when_turned_zombie[touch.right_player_id] = (
+                    when_turned_zombie.get(touch.right_player_id) or touch.when_touched
+                )
+            untouched -= participants
+        zombies |= untouched
+        for player_id in untouched:
+            when_turned_zombie[player_id] = when_turned_zombie.get(
+                player_id
+            ) or datetime.datetime(datetime.MINYEAR, 1, 1)
+        humans -= zombies
+
+    return {human_id: points[human_id] for human_id in humans}

@@ -35,7 +35,7 @@ $(document).ready(function(e) {
     function update_from_result(data) {
         players_table.load(data.players);
         rounds_table.load(data.rounds);
-        var is_round_running = (data.rounds.length > 0 && data.rounds[data.rounds.length - 1].when_ended === null) ;
+        var is_round_running = (data.rounds.length > 0 && data.rounds[data.rounds.length - 1].when_ended === null);
         $('#btn-start-game').attr("disabled", data.is_started);
         $('#btn-make-zombies').attr("disabled", data.rounds.length > 0);
         $('#btn-start-round').attr("disabled", !data.is_started || is_round_running );
@@ -98,20 +98,17 @@ $(document).ready(function(e) {
 <div>
     <a href="{{ url_for('admin.root') }}">Go Back</a>
 </div>
-<h2>Controls</h2>
-<div>
-    <button class="button button-m" id="btn-start-game">Start Game</button><br>
-    <input type="number" id="input-number-zombies" min="1" max="10">
-    <button class="button button-m" id="btn-make-zombies">Make Zombies</button><br>
-    <button class="button button-m" id="btn-start-round">Start Round</button><br>
-    <button class="button button-m" id="btn-end-round">End Round</button><br>
-</div>
 <div>
     <h2>Rounds</h2>
+    <button class="button button-m" id="btn-start-game">Start Game</button>
+    <button class="button button-m" id="btn-start-round">Start Round</button>
+    <button class="button button-m" id="btn-end-round">End Round</button><br>
     <table class="styled-table" id="rounds-table"></table>
 </div>
 <div>
     <h2>Players</h2>
+    Create <input type="number" id="input-number-zombies" min="1" max="10"> zombies
+    <button class="button button-s" id="btn-make-zombies">GO</button><br>
     <table class="styled-table" id="players-table"></table>
 </div>
 <div>

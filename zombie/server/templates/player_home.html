@@ -75,7 +75,6 @@ $(document).ready(function(e) {
     });
 
     $('#form-input-name').on("input", function (e) {
-        console.info($('#form-input-name').val());
         $('#btn-name-submit').attr("disabled",
             $('#form-input-name').val().length < 3
         );

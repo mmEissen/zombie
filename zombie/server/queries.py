@@ -398,13 +398,11 @@ list_rounds_in_game = _list_rounds_in_game()
 class _list_touches:
     _STATEMENT = r"""
 SELECT 
-    left_player.player_id AS left_player_id,
-    left_player.name AS left_player_name,
-    right_player.player_id AS right_player_id,
-    right_player.name AS right_player_name
+    touches.left_player AS left_player_id,
+    touches.right_player AS right_player_id,
+    touches.when_created AS when_touched,
+    rounds.round_number AS round_number
 FROM touches
-JOIN players AS left_player ON touches.left_player = left_player.player_id
-JOIN players AS right_player ON touches.right_player = right_player.player_id
 JOIN rounds ON touches.round_id = rounds.round_id
 WHERE rounds.game_id = %(game_id)s
 """
@@ -412,8 +410,8 @@ WHERE rounds.game_id = %(game_id)s
     class Row:
         left_player_id: int
         right_player_id: int
-        left_player_name: str
-        right_player_name: str
+        when_touched: datetime.datetime
+        round_number: int
 
 
     def __call__(
