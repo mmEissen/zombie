@@ -18,8 +18,8 @@ function toggle_zombie(player_id) {
 $(document).ready(function(e) {
     function zombie_toggle(player) {
         var is_zombie = player.is_initial_zombie;
-        var text = is_zombie ? "Zombie" : "Human";
-        return "<button class=\"button\" onclick=\"toggle_zombie(" + player.player_id + ")\">" + text + "</button>";
+        var text = is_zombie ? "Z" : "H";
+        return "<button class=\"button button-s\" onclick=\"toggle_zombie(" + player.player_id + ")\">" + text + "</button>";
     }
 
     var players_table = DynamicTable().config('players-table',
@@ -35,7 +35,11 @@ $(document).ready(function(e) {
     function update_from_result(data) {
         players_table.load(data.players);
         rounds_table.load(data.rounds);
+        var is_round_running = (data.rounds.length > 0 && data.rounds[data.rounds.length - 1].when_ended === null) ;
         $('#btn-start-game').attr("disabled", data.is_started);
+        $('#btn-make-zombies').attr("disabled", data.rounds.length > 0);
+        $('#btn-start-round').attr("disabled", !data.is_started || is_round_running );
+        $('#btn-end-round').attr("disabled", !data.is_started || !is_round_running );
     }
 
     (function update() {
@@ -56,6 +60,35 @@ $(document).ready(function(e) {
             type: "POST",
         });
     });
+
+    $('#btn-make-zombies').click(function(e) {
+        $('#btn-make-zombies').attr("disabled", true);
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.make_zombies', game_id=game_id) }}",
+            type: "POST",
+            data: JSON.stringify({number_zombies: $('#input-number-zombies').val()}),
+            contentType: 'application/json',
+        });
+    });
+
+    $('#btn-start-round').click(function(e) {
+        $('#btn-start-round').attr("disabled", true);
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.start_round', game_id=game_id) }}",
+            type: "POST",
+        });
+    });
+
+    $('#btn-end-round').click(function(e) {
+        $('#btn-end-round').attr("disabled", true);
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.end_round', game_id=game_id) }}",
+            type: "POST",
+        });
+    });
 });
 </script>
 {% endblock %}
@@ -67,9 +100,11 @@ $(document).ready(function(e) {
 </div>
 <h2>Controls</h2>
 <div>
-    <button class="button" id="btn-start-game">Start Game</button><br>
+    <button class="button button-m" id="btn-start-game">Start Game</button><br>
     <input type="number" id="input-number-zombies" min="1" max="10">
-    <button class="button" id="btn-start-game">Make Zombies</button><br>
+    <button class="button button-m" id="btn-make-zombies">Make Zombies</button><br>
+    <button class="button button-m" id="btn-start-round">Start Round</button><br>
+    <button class="button button-m" id="btn-end-round">End Round</button><br>
 </div>
 <div>
     <h2>Rounds</h2>

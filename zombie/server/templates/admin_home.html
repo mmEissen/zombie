@@ -9,7 +9,7 @@ var games_table;
 function active_button(item) {
     var is_active = item.is_active;
     var text = is_active ? "YES" : "NO"
-    return "<button class=\"button\" onclick=\"activate_game(" + item.id_ + ")\">" + text + "</button>";
+    return "<button class=\"button button-s\" onclick=\"activate_game(" + item.id_ + ")\">" + text + "</button>";
 }
 
 function game_link(item) {
@@ -64,6 +64,6 @@ $(document).ready(function(e) {
     <table class="styled-table" id="games-table"></table>
 </div>
 <div>
-    <button class="button" id="btn-new-game">New Game</button><br>
+    <button class="button button-m" id="btn-new-game">New Game</button><br>
 </div>
 {% endblock %}

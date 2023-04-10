@@ -122,6 +122,7 @@ def get_game_details(game_id: int) -> GameDetails | None:
 
 class Player(pydantic.BaseModel):
     game_id: int | None = None
+    game_is_started: bool = True
     name: str | None = None
     round_number: int | None = None
     round_ended: bool = True
@@ -135,6 +136,7 @@ def get_player_in_active_game(uid: str) -> Player:
 
     player_in_game = Player(
         game_id=player.game_id,
+        game_is_started=player.is_started,
         name=player.name,
     )
 
@@ -185,3 +187,11 @@ def make_zombies(game_id: int, number_zombies: int) -> None:
 
 def toggle_zombie(player_id: int) -> None:
     queries.toggle_zombie(player_id=player_id)
+
+
+def start_round(game_id: int) -> None:
+    queries.start_round(game_id=game_id)
+
+
+def end_round(game_id: int) -> None:
+    queries.end_round(game_id=game_id)

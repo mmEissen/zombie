@@ -12,3 +12,4 @@ WHERE players.player_id in (
     ORDER BY random()
     LIMIT coalesce(%(number_zombies)s, 1)
 )
+RETURNING players.player_id

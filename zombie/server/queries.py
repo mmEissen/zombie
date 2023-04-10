@@ -123,7 +123,7 @@ SELECT
     games.when_created as when_created,
     games.is_active as is_active,
     games.is_started as is_started,
-    count(players.player_id) as player_count,
+    count(DISTINCT players.player_id) as player_count,
     coalesce(max(rounds.round_number), 0) as round_number,
     CASE
         WHEN coalesce(max(rounds.round_number), 0) = 0 THEN true
@@ -163,6 +163,7 @@ class _get_player_in_active_game:
     _STATEMENT = r"""
 SELECT 
     games.game_id AS game_id,
+    games.is_started AS is_started,
     players.name AS name
 FROM games
 LEFT OUTER JOIN players ON players.game_id = games.game_id AND players.nfc_id = %(nfc_id)s
@@ -171,6 +172,7 @@ WHERE games.is_active
     @dataclasses.dataclass
     class Row:
         game_id: int
+        is_started: bool
         name: str
 
 
@@ -443,6 +445,7 @@ WHERE players.player_id in (
     ORDER BY random()
     LIMIT coalesce(%(number_zombies)s, 1)
 )
+RETURNING players.player_id
 """
     @dataclasses.dataclass
     class Row:

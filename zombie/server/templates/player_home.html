@@ -35,7 +35,7 @@ $(document).ready(function(e) {
             }
         )
 
-        if (active_game_id === null) {
+        if (active_game_id === null || data.game_is_started) {
             set_state_no_active_game();
         } else if (player_name === null) {
             set_state_registration_form();
@@ -55,6 +55,7 @@ $(document).ready(function(e) {
 
     $('#btn-name-submit').click(function(e) {
         clear_error();
+        $('#form-input-name').attr("disabled", true);
         $('#btn-name-submit').attr("disabled", true);
         $.ajax({
             dataType: "json",
@@ -66,10 +67,18 @@ $(document).ready(function(e) {
             statusCode: {
                 409: function () {
                     set_error("Sorry, this name already exists!");
+                    $('#form-input-name').attr("disabled", false);
                     $('#btn-name-submit').attr("disabled", false);
                 }
             }
         });
+    });
+
+    $('#form-input-name').on("input", function (e) {
+        console.info($('#form-input-name').val());
+        $('#btn-name-submit').attr("disabled",
+            $('#form-input-name').val().length < 3
+        );
     });
 
     (function update() {
@@ -94,7 +103,8 @@ $(document).ready(function(e) {
     Loading...
 </div>
 <div id="div-no-active-game" hidden=true>
-    No game is currently active!
+    <h1>No Game</h1>
+    Sorry, there is no game to join right now.
 </div>
 <div id="div-registration-form" hidden=true>
     <h1>Welcome</h1>
@@ -103,7 +113,7 @@ $(document).ready(function(e) {
     <form autocomplete="off">
         <input type="text" name="name" id="form-input-name"><br>
         <input type="hidden" name="uid" id="form-input-uid" value="{{ uid }}">
-        <button class="button" id="btn-name-submit">Submit</button>
+        <button class="button button-m" id="btn-name-submit" disabled="disabled">Submit</button>
     </form>
 </div>
 <div id="div-pre-game" hidden=true>

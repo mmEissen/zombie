@@ -150,3 +150,21 @@ def toggle_zombie():
     logic.toggle_zombie(data.player_id)
 
     return "", 201
+
+
+@blueprint.post(
+    "/games/<int:game_id>/start-round",
+)
+def start_round(game_id: int):
+    logic.start_round(game_id)
+
+    return "", 201
+
+
+@blueprint.post(
+    "/games/<int:game_id>/end-round",
+)
+def end_round(game_id: int):
+    logic.end_round(game_id)
+
+    return "", 201
