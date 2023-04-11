@@ -1,4 +1,5 @@
 SELECT 
+    players.player_id AS player_id,
     games.game_id AS game_id,
     games.is_started AS is_started,
     players.name AS name

@@ -9,6 +9,16 @@ from zombie.server import queries
 import psycopg2.errors
 
 
+class GameException(Exception):
+    pass
+
+
+class UserFacingError(GameException):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
 def get_active_game_id() -> int | None:
     game_id = queries.get_active_game_id()
     if not game_id:
@@ -124,6 +134,7 @@ def get_game_details(game_id: int) -> GameDetails | None:
 
 
 class Player(pydantic.BaseModel):
+    player_id: int | None = None
     game_id: int | None = None
     game_is_started: bool = True
     name: str | None = None
@@ -138,6 +149,7 @@ def get_player_in_active_game(uid: str) -> Player:
     player = players[0]
 
     player_in_game = Player(
+        player_id=player.player_id,
         game_id=player.game_id,
         game_is_started=player.is_started,
         name=player.name,
@@ -158,15 +170,17 @@ def get_player_in_active_game(uid: str) -> Player:
     return player_in_game
 
 
-class PlayerNameExistsError(Exception):
-    pass
-
-
 def create_player_in_active_game(name: str, nfc_id: str) -> None:
+    if len(name) < 3:
+        raise UserFacingError("Name too short!")
+    if len(nfc_id) < 1:
+        raise UserFacingError("NFC ID too short!")
     try:
         queries.insert_player(name=name, nfc_id=nfc_id)
-    except psycopg2.errors.UniqueViolation as e:
-        raise PlayerNameExistsError() from e
+    except psycopg2.errors.UniqueViolation:
+        raise UserFacingError("Name already taken!")
+    except psycopg2.errors.NotNullViolation:
+        raise UserFacingError("There is no game to add the player to.")
 
 
 class BadTouchError(Exception):
@@ -193,7 +207,12 @@ def toggle_zombie(player_id: int) -> None:
 
 
 def start_round(game_id: int) -> None:
-    queries.start_round(game_id=game_id)
+    try:
+        queries.start_round(game_id=game_id)
+    except psycopg2.errors.ExclusionViolation as e:
+        raise UserFacingError("Can't start a new round, another round is already running!")
+    except psycopg2.errors.CheckViolation as e:
+        raise UserFacingError("Can't start a new round, already in last round!")
 
 
 def end_round(game_id: int) -> None:

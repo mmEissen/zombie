@@ -65,7 +65,7 @@ $(document).ready(function(e) {
             data: JSON.stringify({name: $('#form-input-name').val(), nfc_id: $('#form-input-uid').val()}),
             contentType: 'application/json',
             statusCode: {
-                409: function () {
+                400: function () {
                     set_error("Sorry, this name already exists!");
                     $('#form-input-name').attr("disabled", false);
                     $('#btn-name-submit').attr("disabled", false);

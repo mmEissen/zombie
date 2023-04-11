@@ -46,7 +46,7 @@ services:
       - "8000:8000"
     volumes:
       - ./zombie:/code/zombie:ro
-    command: --reload
+    command: ["--reload", "--workers=20"]
     restart: always
     depends_on:
       init_db:

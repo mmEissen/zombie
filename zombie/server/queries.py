@@ -162,6 +162,7 @@ get_game_info = _get_game_info()
 class _get_player_in_active_game:
     _STATEMENT = r"""
 SELECT 
+    players.player_id AS player_id,
     games.game_id AS game_id,
     games.is_started AS is_started,
     players.name AS name
@@ -171,6 +172,7 @@ WHERE games.is_active
 """
     @dataclasses.dataclass
     class Row:
+        player_id: int
         game_id: int
         is_started: bool
         name: str

@@ -94,10 +94,7 @@ class PutPlayer(pydantic.BaseModel):
 )
 def put_player():
     player = PutPlayer(**flask.request.json)
-    try:
-        logic.create_player_in_active_game(player.name, player.nfc_id)
-    except logic.PlayerNameExistsError:
-        flask.abort(409)
+    logic.create_player_in_active_game(player.name, player.nfc_id)
     return "", 201
 
 

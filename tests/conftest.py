@@ -20,6 +20,7 @@ def testing_config(pg_database):
             "APP_DB_USER": pg_database.user,
             "APP_DB_PORT": pg_database.port,
             "APP_DB_PASSWORD": pg_database.password,
+            "APP_ENV": "test",
         }
     )
 

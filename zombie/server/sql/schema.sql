@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS players (
     is_initial_zombie BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE (game_id, name),
-    UNIQUE (game_id, nfc_id)
+    UNIQUE (game_id, nfc_id),
+    CHECK (char_length(name) >= 3),
+    CHECK (char_length(name) >= 1)
 );
 
 CREATE TABLE IF NOT EXISTS rounds (
@@ -57,3 +59,29 @@ CREATE TABLE IF NOT EXISTS touches (
 
     UNIQUE (round_id, left_player, right_player)
 );
+
+CREATE OR REPLACE FUNCTION game_not_started() RETURNS TRIGGER AS $$
+DECLARE
+    is_game_started BOOLEAN;
+BEGIN
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        SELECT INTO is_game_started is_started FROM games WHERE game_id = NEW.game_id;
+        IF is_game_started THEN
+            RAISE EXCEPTION 'During % of players: Game must not be started',tg_op;
+        END IF;
+    END IF;
+
+    IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+        SELECT INTO is_game_started is_started FROM games WHERE game_id = OLD.game_id;
+        IF is_game_started THEN
+            RAISE EXCEPTION 'During % of players: Game must not be started',tg_op;
+        END IF;
+    END IF;
+
+    RETURN NULL;
+END;
+$$ LANGUAGE 'plpgsql';
+
+CREATE CONSTRAINT TRIGGER game_not_started_trigger
+AFTER INSERT OR UPDATE OR DELETE ON players
+FOR EACH ROW EXECUTE PROCEDURE game_not_started();

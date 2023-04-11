@@ -18,3 +18,5 @@ class AppConfig:
         secret_key = environ.var("dev")
 
     flask = environ.group(Flask)
+
+    env = environ.var("prod")
