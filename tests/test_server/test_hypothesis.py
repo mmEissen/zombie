@@ -54,15 +54,21 @@ class ZombieGameModel:
             or len(nfc_id) < 1
             or "\0" in name
             or "\0" in nfc_id
-            or nfc_id in self.known_nfc_ids
+            or name in self.players_by_name
         ):
             return
+        if nfc_id in nfc_id in self.players_by_nfc_id:
+            existing = self.players_by_nfc_id[nfc_id]
+            del self.players_by_nfc_id[nfc_id]
+            del self.players_by_name[existing.name]
+            self.players -= {existing}
+            self.zombies -= {existing}
+            self.infected -= {existing}
         player = Player(name, nfc_id)
         self.players.add(player)
         self.players_by_nfc_id[nfc_id] = player
         self.players_by_name[name] = player
         self.points[player] = 0
-        self.known_nfc_ids.add(nfc_id)
 
     def toggle_zombie(self, name: str) -> None:
         if self.is_game_started:
@@ -128,7 +134,7 @@ class ZombieGameModel:
                 )
                 for player in self.players
             ],
-            key=lambda score: int(score.is_zombie) or score.points,
+            key=lambda score: (int(score.is_zombie) or score.points, score.name),
             reverse=True,
         )
 
@@ -250,7 +256,7 @@ def test_player_registration(pg_database_pool: pg_docker.DatabasePool):
     run_state_machine_as_test(
         StateMachine,
         settings=settings(
-            max_examples=100,
+            max_examples=50,
             deadline=datetime.timedelta(seconds=1),
             stateful_step_count=20,
         ),

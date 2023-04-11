@@ -203,7 +203,10 @@ def make_zombies(game_id: int, number_zombies: int) -> None:
 
 
 def toggle_zombie(player_id: int) -> None:
-    queries.toggle_zombie(player_id=player_id)
+    try:
+        queries.toggle_zombie(player_id=player_id)
+    except psycopg2.errors.RaiseException as e:
+        raise UserFacingError("Can't toggle zombie after game is started")
 
 
 def start_round(game_id: int) -> None:
@@ -252,7 +255,7 @@ def get_leader_board() -> list[LeaderBoardEntry]:
         for player in players
     ]
 
-    return sorted(entries, key=lambda e: e.points or e.is_initial_zombie, reverse=True)
+    return sorted(entries, key=lambda e: (int(e.is_initial_zombie) or e.points, e.name), reverse=True)
 
 
 def calculate_human_points(
