@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import contextlib
 import dataclasses
 import datetime
 import environ
@@ -14,10 +17,162 @@ import hypothesis.strategies as st
 
 import psql2py_core
 import pg_docker
+import pytest
 
 from zombie.server import conf, entrypoint, db
 import urllib.parse
 
+
+@pytest.fixture(scope="class")
+def db_pool_unittest(request, pg_database_pool):
+    request.cls.set_database_pool(pg_database_pool)
+
+
+class RuleBasedStateMachineWithClient(RuleBasedStateMachine):
+    database_pool: pg_docker.DatabasePool
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._exit_stack = contextlib.ExitStack()
+        db_config = self._exit_stack.enter_context(self.database_pool.database())
+
+        config = environ.to_config(
+            conf.AppConfig,
+            {
+                "APP_DB_HOST": db_config.host,
+                "APP_DB_NAME": db_config.dbname,
+                "APP_DB_USER": db_config.user,
+                "APP_DB_PORT": db_config.port,
+                "APP_DB_PASSWORD": db_config.password,
+                "APP_ENV": "test",
+            },
+        )
+        app = entrypoint.create_app(config)
+        self.client = app.test_client()
+
+    @classmethod
+    def set_database_pool(cls, database_pool: pg_docker.DatabasePool) -> None:
+        cls.database_pool = database_pool
+
+    @classmethod
+    def make_test_case(cls):
+        test_case = super().TestCase
+        test_case.set_database_pool = cls.set_database_pool
+        return pytest.mark.usefixtures("db_pool_unittest")(test_case)
+
+    def teardown(self):
+        db.connection_pool().closeall()
+        self._exit_stack.close()
+
+
+@dataclasses.dataclass
+class Player:
+    name: str
+    nfc_id: str
+    is_zombie: bool = False
+
+
+class PlayerSetupStateMachine(RuleBasedStateMachineWithClient):
+    class Model:
+        def __init__(self) -> None:
+            self.players_by_nfc_id: dict[str, Player] = {}
+            self.is_game_started = False
+
+        def add_player(self, name: str, nfc_id: str) -> None:
+            if (
+                len(name) < 3
+                or self.is_game_started
+                or len(nfc_id) < 1
+                or "\0" in name
+                or "\0" in nfc_id
+            ):
+                return
+            if nfc_id in self.players_by_nfc_id:
+                self.players_by_nfc_id[nfc_id].name = name
+                return
+            self.players_by_nfc_id[nfc_id] = Player(name, nfc_id)
+
+        def toggle_zombie(self, nfc_id: str) -> None:
+            if self.is_game_started:
+                return
+            try:
+                player = self.players_by_nfc_id[nfc_id]
+            except KeyError:
+                return
+
+            player.is_zombie = not player.is_zombie
+
+        def start_game(self) -> None:
+            self.is_game_started = True
+
+        def list_players(self) -> list[tuple[str, str, bool]]:
+            return sorted((p.name, p.nfc_id, p.is_zombie) for p in self.players_by_nfc_id.values())
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.game_id = self.client.put("/api/game").json["id_"]
+        self.client.put("/api/active-game", json={"game_id": self.game_id})
+
+        self.player_id_by_nfc: dict[str, int] = {}
+
+        self.model = self.Model()
+
+    names = Bundle("names")
+    nfc_ids = Bundle("nfc_ids")
+
+    @rule(target=names, name=st.text())
+    def add_name(self, name: str):
+        return name
+
+    @rule(target=nfc_ids, nfc_id=st.text())
+    def add_nfc_id(self, nfc_id: str):
+        return nfc_id
+
+    @rule()
+    def start_game(self):
+        self.client.post(f"/api/games/{self.game_id}/start")
+        self.model.start_game()
+
+    @rule(name=names, nfc_id=nfc_ids)
+    def register_player(self, name: str, nfc_id: str):
+        self.model.add_player(name, nfc_id)
+        response = self.client.put(
+            "/api/active-game/player", json={"name": name, "nfc_id": nfc_id}
+        )
+        if response.status_code == 201:
+            response = self.client.get(
+                f"/api/active-game/player/{urllib.parse.quote_plus(nfc_id)}"
+            )
+            assert response.status_code == 200
+            player_id = response.json["player_id"]
+            self.player_id_by_nfc[nfc_id] = player_id
+
+    @rule(nfc_id=nfc_ids)
+    def toggle_zombie(self, nfc_id: str):
+        player_id = self.player_id_by_nfc.get(nfc_id, 999_999_999)
+        self.model.toggle_zombie(nfc_id)
+        self.client.post("/api/toggle-zombie", json={"player_id": player_id})
+
+    @invariant()
+    def player_list_matches(self):
+        real_players = [
+            (p["name"], p["uid"], p["is_initial_zombie"]) for p in
+            self.client.get(f"/api/game/{self.game_id}").json["players"]
+        ]
+        real_players.sort()
+        assert real_players == self.model.list_players()
+
+
+TestStartGame = PlayerSetupStateMachine.make_test_case()
+TestStartGame.settings = settings(
+    max_examples=100,
+    deadline=datetime.timedelta(seconds=1),
+    stateful_step_count=20,
+)
+
+
+"""
 
 @dataclasses.dataclass(frozen=True)
 class Player:
@@ -261,3 +416,6 @@ def test_player_registration(pg_database_pool: pg_docker.DatabasePool):
             stateful_step_count=20,
         ),
     )
+
+
+"""

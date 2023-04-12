@@ -1,3 +1,4 @@
+import psycopg2.errors
 import pytest
 
 import environ
@@ -46,7 +47,10 @@ def setup_db(pg_database: pg_docker.DatabaseParams):
         ).db
     )
     psql2py_core.set_connection_manager(db.connection)
-    db.init()
+    try:
+        db.init()
+    except psycopg2.errors.OperationalError:
+        pass
 
 
 @pytest.fixture(scope="session")

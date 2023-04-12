@@ -29,14 +29,18 @@ def set_db_config(db_config: conf.AppConfig.DB) -> None:
 
 
 @functools.lru_cache(maxsize=1)
-def connection_pool(key: str) -> psycopg2.pool.AbstractConnectionPool:
+def _connection_pool(key: str) -> psycopg2.pool.AbstractConnectionPool:
     return psycopg2.pool.ThreadedConnectionPool(_min_pool_size, _max_pool_size, **_db_config)
+
+
+def connection_pool() -> psycopg2.pool.AbstractConnectionPool:
+    key = f"{_db_config['dbname']}:{_db_config['user']}:{_db_config['password']}:{_db_config['host']}:{_db_config['port']}:{_min_pool_size}:{_max_pool_size}"
+    return _connection_pool(key)
 
 
 @contextlib.contextmanager
 def connection() -> psycopg2.extensions.connection:
-    key = f"{_db_config['dbname']}:{_db_config['user']}:{_db_config['password']}:{_db_config['host']}:{_db_config['port']}:{_min_pool_size}:{_max_pool_size}"
-    connection_ = connection_pool(key).getconn()
+    connection_ = connection_pool().getconn()
     try:
         yield connection_
     except:
@@ -45,8 +49,7 @@ def connection() -> psycopg2.extensions.connection:
     else:
         connection_.commit()
     finally:
-        connection_pool(key).putconn(connection_)
-    
+        connection_pool().putconn(connection_)
 
 
 def init() -> None:
