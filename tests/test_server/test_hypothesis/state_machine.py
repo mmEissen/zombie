@@ -9,11 +9,6 @@ import pytest
 from zombie.server import conf, entrypoint, db
 
 
-@pytest.fixture(scope="class")
-def db_pool_unittest(request, pg_database_pool):
-    request.cls.set_database_pool(pg_database_pool)
-
-
 class RuleBasedStateMachineWithClient(RuleBasedStateMachine):
     database_pool: pg_docker.DatabasePool
 

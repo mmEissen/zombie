@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS touches (
     left_player BIGINT NOT NULL references players(player_id),
     right_player BIGINT NOT NULL references players(player_id),
 
-    UNIQUE (round_id, left_player, right_player)
+    UNIQUE (round_id, left_player, right_player),
+    CHECK (left_player != right_player)
 );
 
 CREATE OR REPLACE FUNCTION game_not_started() RETURNS TRIGGER AS $$

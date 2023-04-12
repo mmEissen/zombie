@@ -183,15 +183,15 @@ def create_player_in_active_game(name: str, nfc_id: str) -> None:
         raise UserFacingError("There is no game to add the player to.")
 
 
-class BadTouchError(Exception):
-    """Sweat baby, sweat baby"""
-
-
 def make_touch(left_nfc: str, right_nfc: str) -> None:
     try:
         queries.insert_touch(left_player_nfc=left_nfc, right_player_nfc=right_nfc)
-    except psycopg2.errors.IntegrityError:
-        raise BadTouchError()
+    except psycopg2.errors.NotNullViolation:
+        raise UserFacingError("No active round")
+    except psycopg2.errors.CheckViolation:
+        raise UserFacingError("Stop touching yourself!")
+    except psycopg2.errors.UniqueViolation:
+        raise UserFacingError("Can't touch twice")
 
 
 def start_game(game_id: int) -> None:
@@ -242,7 +242,7 @@ def get_leader_board() -> list[LeaderBoardEntry]:
     }
 
     human_points = calculate_human_points(
-        touches, player_ids, initial_zombie_ids, len(rounds)
+        touches, player_ids, initial_zombie_ids, rounds
     )
 
     entries = [
@@ -262,7 +262,7 @@ def calculate_human_points(
     touches: list[queries.list_touches.Row],
     player_ids: set[int],
     initial_zombie_ids: set[int],
-    rounds: int,
+    rounds: list[queries.list_rounds_in_game.Row],
 ) -> dict[int, int]:
     zombies = set(initial_zombie_ids)
     humans = player_ids - zombies
@@ -275,8 +275,8 @@ def calculate_human_points(
     }
 
     rounds_and_touches = [
-        (round_, [touch for touch in touch_events if touch.round_number == round_])
-        for round_ in range(1, rounds + 1)
+        (round_, [touch for touch in touch_events if touch.round_number == round_.round_number])
+        for round_ in rounds
     ]
 
     for round_, touches_in_round in rounds_and_touches:
@@ -294,11 +294,12 @@ def calculate_human_points(
                     when_turned_zombie.get(touch.right_player_id) or touch.when_touched
                 )
             untouched -= participants
-        zombies |= untouched
-        for player_id in untouched:
-            when_turned_zombie[player_id] = when_turned_zombie.get(
-                player_id
-            ) or datetime.datetime(datetime.MINYEAR, 1, 1)
+        if round_.when_ended is not None:
+            zombies |= untouched
+            for player_id in untouched:
+                when_turned_zombie[player_id] = when_turned_zombie.get(
+                    player_id
+                ) or datetime.datetime(datetime.MINYEAR, 1, 1)
         humans -= zombies
 
     return {human_id: points[human_id] for human_id in humans}

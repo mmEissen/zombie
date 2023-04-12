@@ -118,10 +118,7 @@ class PutTouchData(pydantic.BaseModel):
 def put_touch():
     data = PutTouchData(**flask.request.json)
 
-    try:
-        logic.make_touch(data.left_uid, data.right_uid)
-    except logic.BadTouchError:
-        flask.abort(400)
+    logic.make_touch(data.left_uid, data.right_uid)
 
     return "", 201
 

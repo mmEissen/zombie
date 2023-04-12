@@ -259,7 +259,7 @@ VALUES (
         (
             SELECT round_id
             FROM rounds
-                INNER JOIN games ON games.game_id = rounds.round_id
+                INNER JOIN games ON games.game_id = rounds.game_id
                 AND rounds.when_ended IS NULL
                 AND games.is_active
                 AND games.is_started
