@@ -24,23 +24,39 @@ $(document).ready(function(e) {
     function set_state_pre_game () {
         set_current_state_div($('#div-pre-game'));
     }
+    
+    function set_state_role_reveal () {
+        set_current_state_div($('#div-role-screen'));
+    }
 
     function update_from_result (data) {
         var active_game_id = data.game_id;
         var player_name = data.name;
+        var player_role = data.is_initial_zombie ? "Zombie" : "Human"
 
         $(".player-name").each(
             function() {
                 $(this).html(player_name);
             }
         )
+        $(".player-role").each(
+            function() {
+                $(this).html(player_role);
+            }
+        )
 
-        if (active_game_id === null || data.game_is_started) {
+        if (active_game_id === null || (player_name === null && data.game_is_started)) {
             set_state_no_active_game();
         } else if (player_name === null) {
             set_state_registration_form();
-        } else {
+        } else if (!data.game_is_started) {
             set_state_pre_game();
+        } else if (data.round_number === 0){
+            set_state_role_reveal();
+        } else if (!data.round_ended) {
+
+        } else {
+
         }
     }
 
@@ -78,6 +94,14 @@ $(document).ready(function(e) {
         $('#btn-name-submit').attr("disabled",
             $('#form-input-name').val().length < 3
         );
+    });
+
+    $('#role-reveal').bind("touchstart mousedown", function () {
+        $('#player-role').attr("hidden", false);
+    });
+
+    $('#role-reveal').bind("touchend mouseup", function () {
+        $('#player-role').attr("hidden", true);
     });
 
     (function update() {
@@ -121,6 +145,15 @@ $(document).ready(function(e) {
     Keep this page open!<br><br>
     That's all for now. The game will be explained to you once
     all players have arrived. In the meantime, have some snacks and relax.
+</div>
+<div id="div-role-screen" hidden=true>
+    <h1><span class="player-name"></span></h1>
+    <br>
+    Tap the field below to reveal your role.<br><br>
+    CAREFUL! You are not allowed to show this to ANYONE!<br>
+    <span id="role-reveal" class="role-reveal">
+        <span id="player-role" class="player-role" hidden="hidden"></span>
+    </span>
 </div>
 <div id="div-please-wait" hidden=true>
     Please wait!

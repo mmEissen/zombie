@@ -19,4 +19,4 @@ class AppConfig:
 
     flask = environ.group(Flask)
 
-    env = environ.var("prod")
+    env = environ.var("dev")

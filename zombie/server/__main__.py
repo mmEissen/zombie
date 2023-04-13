@@ -3,6 +3,7 @@ import environ
 
 from zombie.server import conf, db
 
+import traceback
 
 @click.group()
 def cli():
@@ -12,7 +13,10 @@ def cli():
 
 @cli.command()
 def init_db():
-    db.init()
+    try:
+        db.init()
+    except Exception:
+        traceback.print_exc()
 
 
 cli()

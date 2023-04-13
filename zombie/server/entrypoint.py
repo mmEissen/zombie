@@ -32,6 +32,6 @@ def handle_user_facing_error(exception: logic.UserFacingError):
 
 def handle_value_error(exception: ValueError):
     if str(exception) != "A string literal cannot contain NUL (0x00) characters.":
-        return exception
+        raise exception
     
     return flask.jsonify({"error": "Detected NUL (0x00) in input."}), 400

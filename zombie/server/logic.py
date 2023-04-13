@@ -140,6 +140,7 @@ class Player(pydantic.BaseModel):
     name: str | None = None
     round_number: int | None = None
     round_ended: bool = True
+    is_initial_zombie: bool | None = None
 
 
 def get_player_in_active_game(uid: str) -> Player:
@@ -148,11 +149,14 @@ def get_player_in_active_game(uid: str) -> Player:
         return Player()
     player = players[0]
 
+    print(player)
+
     player_in_game = Player(
         player_id=player.player_id,
         game_id=player.game_id,
         game_is_started=player.is_started,
         name=player.name,
+        is_initial_zombie=player.is_initial_zombie,
     )
 
     if player.game_id is None:
