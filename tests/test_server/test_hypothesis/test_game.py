@@ -38,9 +38,11 @@ class Player:
     _round_number: int = 1
 
     def _get_touched_by(self, other: Player) -> None:
-        if self.is_zombie or other.nfc_id in self._touched_this_round:
+        if other.nfc_id in self._touched_this_round:
             return
         self._touched_this_round.add(other.nfc_id)
+        if self.is_zombie:
+            return
         if other.is_zombie:
             self.when_zombified = (self.time_func(), self._round_number)
             self.is_zombie = True
@@ -210,7 +212,7 @@ class StateMachine(RuleBasedStateMachineWithClient):
 
 TestGame = StateMachine.make_test_case()
 TestGame.settings = settings(
-    max_examples=300,
+    max_examples=1000,
     deadline=datetime.timedelta(seconds=1),
     stateful_step_count=40,
     print_blob=True,
