@@ -64,6 +64,50 @@ RETURNING null AS null
 
 deactivate_game = _deactivate_game()
 
+class _drink_potion:
+    _STATEMENT = r"""
+/*
+ Columns:
+ potion_chug_id: bigint
+ */
+INSERT INTO potion_chugs (player_id)
+VALUES (
+        (
+            SELECT (
+                    SELECT player_id
+                    FROM players
+                        JOIN games ON games.game_id = players.game_id
+                    WHERE players.nfc_id = %(nfc_id)s
+                        AND games.is_active
+                )
+            FROM rounds
+                INNER JOIN games ON games.game_id = rounds.game_id
+                AND rounds.when_ended IS NULL
+                AND games.is_active
+                AND games.is_started
+        )
+    )
+RETURNING potion_chug_id
+"""
+    @dataclasses.dataclass
+    class Row:
+        potion_chug_id: int
+
+
+    def __call__(
+        self,
+        *,
+        nfc_id: str,
+    ) -> list[Row]:
+        """Columns:
+     potion_chug_id: bigint"""
+        params = {
+            "nfc_id": nfc_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+drink_potion = _drink_potion()
+
 class _end_round:
     _STATEMENT = r"""
 /*
@@ -267,17 +311,17 @@ VALUES (
                 AND games.is_started
         ),
         (
-            SELECT player_id
+            SELECT min(player_id)
             FROM players
             JOIN games ON games.game_id = players.game_id
-            WHERE nfc_id = %(left_player_nfc)s
+            WHERE nfc_id in (%(left_player_nfc)s, %(right_player_nfc)s)
             AND games.is_active
         ),
         (
-            SELECT player_id
+            SELECT max(player_id)
             FROM players
             JOIN games ON games.game_id = players.game_id
-            WHERE nfc_id = %(right_player_nfc)s
+            WHERE nfc_id in (%(left_player_nfc)s, %(right_player_nfc)s)
             AND games.is_active
         )
     )
@@ -366,6 +410,35 @@ ORDER BY players.name
         return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
 
 list_players_in_game = _list_players_in_game()
+
+class _list_potion_chugs:
+    _STATEMENT = r"""
+SELECT 
+    potion_chugs.player_id AS player_id,
+    potion_chugs.when_created AS when_created
+FROM potion_chugs
+JOIN players ON potion_chugs.player_id = players.player_id
+WHERE players.game_id = %(game_id)s
+ORDER BY when_created ASC
+"""
+    @dataclasses.dataclass
+    class Row:
+        player_id: int
+        when_created: datetime.datetime
+
+
+    def __call__(
+        self,
+        *,
+        game_id: int,
+    ) -> list[Row]:
+        """"""
+        params = {
+            "game_id": game_id,
+        }
+        return [self.Row(*row) for row in core.execute(self._STATEMENT, params)]
+
+list_potion_chugs = _list_potion_chugs()
 
 class _list_rounds_in_game:
     _STATEMENT = r"""

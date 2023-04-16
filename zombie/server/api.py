@@ -123,6 +123,21 @@ def put_touch():
     return "", 201
 
 
+class PutPotionChugData(pydantic.BaseModel):
+    nfc_id: str
+
+
+@blueprint.put(
+    "/potion_chug",
+)
+def put_potion_chug():
+    data = PutPotionChugData(**flask.request.json)
+
+    logic.drink_potion(data.nfc_id)
+
+    return "", 201
+
+
 @blueprint.post(
     "/games/<int:game_id>/start",
 )

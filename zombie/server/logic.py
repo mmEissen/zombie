@@ -194,6 +194,15 @@ def make_touch(left_nfc: str, right_nfc: str) -> None:
         raise UserFacingError("Can't touch twice")
 
 
+def drink_potion(nfc_id: str) -> None:
+    try:
+        queries.drink_potion(nfc_id=nfc_id)
+    except psycopg2.errors.UniqueViolation:
+        raise UserFacingError("Can only drink once")
+    except psycopg2.errors.NotNullViolation:
+        raise UserFacingError("You are not a player in the game!")
+
+
 def start_game(game_id: int) -> None:
     queries.start_game(game_id=game_id)
 
@@ -213,7 +222,9 @@ def start_round(game_id: int) -> None:
     try:
         queries.start_round(game_id=game_id)
     except psycopg2.errors.ExclusionViolation as e:
-        raise UserFacingError("Can't start a new round, another round is already running!")
+        raise UserFacingError(
+            "Can't start a new round, another round is already running!"
+        )
     except psycopg2.errors.CheckViolation as e:
         raise UserFacingError("Can't start a new round, already in last round!")
 
@@ -235,6 +246,7 @@ def get_leader_board() -> list[LeaderBoardEntry]:
         return []
     rounds = queries.list_rounds_in_game(game_id=active_game_id)
     touches = queries.list_touches(game_id=active_game_id)
+    potion_chugs = queries.list_potion_chugs(game_id=active_game_id)
     players = queries.list_players_in_game(game_id=active_game_id)
     player_ids = {player.player_id for player in players}
     initial_zombie_ids = {
@@ -242,7 +254,7 @@ def get_leader_board() -> list[LeaderBoardEntry]:
     }
 
     human_points = calculate_human_points(
-        touches, player_ids, initial_zombie_ids, rounds
+        touches, player_ids, initial_zombie_ids, rounds, potion_chugs
     )
 
     entries = [
@@ -255,7 +267,11 @@ def get_leader_board() -> list[LeaderBoardEntry]:
         for player in players
     ]
 
-    return sorted(entries, key=lambda e: (int(e.is_initial_zombie) or e.points, e.name), reverse=True)
+    return sorted(
+        entries,
+        key=lambda e: (int(e.is_initial_zombie) or e.points, e.name),
+        reverse=True,
+    )
 
 
 def calculate_human_points(
@@ -263,43 +279,88 @@ def calculate_human_points(
     player_ids: set[int],
     initial_zombie_ids: set[int],
     rounds: list[queries.list_rounds_in_game.Row],
+    potion_chugs: list[queries.list_potion_chugs.Row],
 ) -> dict[int, int]:
     zombies = set(initial_zombie_ids)
     humans = player_ids - zombies
 
     touch_events = sorted(touches, key=lambda touch: touch.when_touched)
 
+    potion_chug_iter = iter(potion_chugs)
+    next_potion_chug = next(potion_chug_iter, None)
+
     points = collections.defaultdict(int)
     when_turned_zombie = {
-        zombie: datetime.datetime(datetime.MINYEAR, 1, 1) for zombie in zombies
+        zombie: (datetime.datetime(datetime.MINYEAR, 1, 1), 0) for zombie in zombies
     }
 
-    rounds_and_touches = [
-        (round_, [touch for touch in touch_events if touch.round_number == round_.round_number])
+    rounds_and_events = [
+        (
+            round_,
+            [
+                touch
+                for touch in touch_events
+                if touch.round_number == round_.round_number
+            ],
+        )
         for round_ in rounds
     ]
 
-    for round_, touches_in_round in rounds_and_touches:
+    def handle_touch(touch: queries.list_touches.Row) -> None:
+        nonlocal zombies
+        nonlocal untouched
+
+        participants = {touch.left_player_id, touch.right_player_id}
+        if touch.left_player_id in zombies or touch.right_player_id in zombies:
+            zombies |= participants
+            when_turned_zombie[touch.left_player_id] = when_turned_zombie.get(
+                touch.left_player_id
+            ) or (touch.when_touched, round_.round_number)
+            when_turned_zombie[touch.right_player_id] = when_turned_zombie.get(
+                touch.right_player_id
+            ) or (touch.when_touched, round_.round_number)
+            return
+        points[touch.left_player_id] += 1
+        points[touch.right_player_id] += 1
+        untouched -= participants
+
+    def handle_potion_chug(potion_chug: queries.list_potion_chugs.Row) -> None:
+        if potion_chug.player_id not in zombies:
+            return
+        when_zombiefied, round_zombified = when_turned_zombie[potion_chug.player_id]
+        if (
+            potion_chug.when_created - when_zombiefied < datetime.timedelta(minutes=10)
+            and round_zombified == round_.round_number
+        ):
+            del when_turned_zombie[potion_chug.player_id]
+            zombies.remove(potion_chug.player_id)
+            humans.add(potion_chug.player_id)
+
+    for round_, touches_in_round in rounds_and_events:
         untouched = set(humans)
         for touch in touches_in_round:
-            points[touch.left_player_id] += 1
-            points[touch.right_player_id] += 1
-            participants = {touch.left_player_id, touch.right_player_id}
-            if touch.left_player_id in zombies or touch.right_player_id in zombies:
-                zombies |= participants
-                when_turned_zombie[touch.left_player_id] = (
-                    when_turned_zombie.get(touch.left_player_id) or touch.when_touched
-                )
-                when_turned_zombie[touch.right_player_id] = (
-                    when_turned_zombie.get(touch.right_player_id) or touch.when_touched
-                )
-            untouched -= participants
+            while (
+                next_potion_chug is not None
+                and next_potion_chug.when_created < touch.when_touched
+            ):
+                handle_potion_chug(next_potion_chug)
+                next_potion_chug = next(potion_chug_iter, None)
+            handle_touch(touch)
         if round_.when_ended is not None:
             zombies |= untouched
             for player_id in untouched:
-                when_turned_zombie[player_id] = when_turned_zombie.get(
-                    player_id
-                ) or datetime.datetime(datetime.MINYEAR, 1, 1)
+                when_turned_zombie[player_id] = when_turned_zombie.get(player_id) or (
+                    datetime.datetime(datetime.MINYEAR, 1, 1),
+                    0,
+                )
+        humans -= zombies
+
+    while next_potion_chug is not None:
+        handle_potion_chug(next_potion_chug)
+        next_potion_chug = next(potion_chug_iter, None)
+
+    if rounds and round_.when_ended is not None:
+        zombies |= untouched
         humans -= zombies
 
     return {human_id: points[human_id] for human_id in humans}

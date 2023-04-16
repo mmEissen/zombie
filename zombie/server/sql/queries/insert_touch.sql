@@ -13,17 +13,17 @@ VALUES (
                 AND games.is_started
         ),
         (
-            SELECT player_id
+            SELECT min(player_id)
             FROM players
             JOIN games ON games.game_id = players.game_id
-            WHERE nfc_id = %(left_player_nfc)s
+            WHERE nfc_id in (%(left_player_nfc)s, %(right_player_nfc)s)
             AND games.is_active
         ),
         (
-            SELECT player_id
+            SELECT max(player_id)
             FROM players
             JOIN games ON games.game_id = players.game_id
-            WHERE nfc_id = %(right_player_nfc)s
+            WHERE nfc_id in (%(left_player_nfc)s, %(right_player_nfc)s)
             AND games.is_active
         )
     )

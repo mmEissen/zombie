@@ -65,19 +65,15 @@ CREATE TABLE IF NOT EXISTS touches (
     right_player BIGINT NOT NULL references players(player_id),
 
     UNIQUE (round_id, left_player, right_player),
-    CHECK (left_player != right_player)
+    CHECK (left_player < right_player)
 );
 
 
 CREATE TABLE IF NOT EXISTS potion_chugs (
-    potion_drink_id BIGSERIAL PRIMARY KEY,
+    potion_chug_id BIGSERIAL PRIMARY KEY,
     when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
 
-    game_id BIGINT NOT NULL references games(game_id),
-    when_chugged TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT utc_now(),
-    player_id BIGINT NOT NULL references players(player_id),
-
-    UNIQUE (game_id, player_id)
+    player_id BIGINT NOT NULL references players(player_id) UNIQUE
 );
 
 
