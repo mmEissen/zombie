@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker compose stop psql2py postgres
+docker compose rm -f postgres
+docker compose up --build -d postgres init_db psql2py

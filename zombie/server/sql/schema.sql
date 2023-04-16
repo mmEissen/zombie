@@ -1,8 +1,15 @@
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
+CREATE OR REPLACE FUNCTION utc_now() 
+RETURNS TIMESTAMP WITHOUT TIME ZONE AS $$
+BEGIN
+    RETURN (now() AT TIME ZONE 'utc');
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS games (
     game_id BIGSERIAL PRIMARY KEY,
-    when_created TIMESTAMP DEFAULT now(),
+    when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
 
     is_active BOOLEAN NOT NULL DEFAULT false,
     is_started BOOLEAN NOT NULL DEFAULT false
@@ -12,7 +19,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_game ON games(is_active) WHERE
 
 CREATE TABLE IF NOT EXISTS players (
     player_id BIGSERIAL PRIMARY KEY,
-    when_created TIMESTAMP DEFAULT now(),
+    when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
 
     game_id BIGINT NOT NULL references games(game_id),
     name TEXT NOT NULL,
@@ -28,13 +35,13 @@ CREATE TABLE IF NOT EXISTS players (
 
 CREATE TABLE IF NOT EXISTS rounds (
     round_id BIGSERIAL PRIMARY KEY,
-    when_created TIMESTAMP DEFAULT now(),
+    when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
 
     game_id BIGINT NOT NULL references games(game_id),
     round_number INTEGER NOT NULL,
 
-    when_started TIMESTAMP NOT NULL DEFAULT now(),
-    when_ended TIMESTAMP,
+    when_started TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT utc_now(),
+    when_ended TIMESTAMP WITHOUT TIME ZONE,
 
     UNIQUE (game_id, round_number),
     CHECK (round_number <= 3 AND round_number >= 1),
@@ -50,16 +57,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS only_one_active_round ON rounds(when_ended) WH
 
 CREATE TABLE IF NOT EXISTS touches (
     touch_id BIGSERIAL PRIMARY KEY,
-    when_created TIMESTAMP DEFAULT now(),
+    when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
     
     round_id BIGINT NOT NULL references rounds(round_id),
-    when_touched TIMESTAMP NOT NULL DEFAULT now(),
+    when_touched TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT utc_now(),
     left_player BIGINT NOT NULL references players(player_id),
     right_player BIGINT NOT NULL references players(player_id),
 
     UNIQUE (round_id, left_player, right_player),
     CHECK (left_player != right_player)
 );
+
+
+CREATE TABLE IF NOT EXISTS potion_chugs (
+    potion_drink_id BIGSERIAL PRIMARY KEY,
+    when_created TIMESTAMP WITHOUT TIME ZONE DEFAULT utc_now(),
+
+    game_id BIGINT NOT NULL references games(game_id),
+    when_chugged TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT utc_now(),
+    player_id BIGINT NOT NULL references players(player_id),
+
+    UNIQUE (game_id, player_id)
+);
+
 
 CREATE OR REPLACE FUNCTION game_not_started() RETURNS TRIGGER AS $$
 DECLARE

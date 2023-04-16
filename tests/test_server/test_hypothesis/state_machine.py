@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import environ
-from hypothesis.stateful import RuleBasedStateMachine
+from hypothesis.stateful import RuleBasedStateMachine, invariant
 import pg_docker
 import pytest
 
 from zombie.server import conf, entrypoint, db
+from ..utils import FakeDbTime
 
 
 class RuleBasedStateMachineWithClient(RuleBasedStateMachine):
@@ -30,6 +32,8 @@ class RuleBasedStateMachineWithClient(RuleBasedStateMachine):
         )
         app = entrypoint.create_app(config)
         self.client = app.test_client()
+        self.fake_time = FakeDbTime()
+        self.fake_time.set_time(datetime.datetime(2023, 4, 15, 12, 0))
 
     @classmethod
     def set_database_pool(cls, database_pool: pg_docker.DatabasePool) -> None:
@@ -40,6 +44,10 @@ class RuleBasedStateMachineWithClient(RuleBasedStateMachine):
         test_case = super().TestCase
         test_case.set_database_pool = cls.set_database_pool
         return pytest.mark.usefixtures("db_pool_unittest")(test_case)
+
+    @invariant()
+    def advance_time(self) -> None:
+        self.fake_time.tick_time(datetime.timedelta(seconds=1))
 
     def teardown(self):
         db.connection_pool().closeall()

@@ -173,7 +173,7 @@ class StateMachine(RuleBasedStateMachineWithClient):
         ]
 
 
-TestGame = reproduce_failure('6.71.0', b'AXicY2CAACYgZmZgYETnMTIAAADiAA4=')(StateMachine.make_test_case())
+TestGame = StateMachine.make_test_case()
 TestGame.settings = settings(
     max_examples=100,
     deadline=datetime.timedelta(seconds=1),

@@ -147,8 +147,6 @@ def get_player_in_active_game(uid: str) -> Player:
         return Player()
     player = players[0]
 
-    print(player)
-
     player_in_game = Player(
         player_id=player.player_id,
         game_id=player.game_id,
