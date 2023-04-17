@@ -212,7 +212,7 @@ class StateMachine(RuleBasedStateMachineWithClient):
 
 TestGame = StateMachine.make_test_case()
 TestGame.settings = settings(
-    max_examples=1000,
+    max_examples=4000,
     deadline=datetime.timedelta(seconds=1),
     stateful_step_count=40,
     print_blob=True,

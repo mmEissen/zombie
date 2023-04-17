@@ -347,6 +347,12 @@ def calculate_human_points(
                 next_potion_chug = next(potion_chug_iter, None)
             handle_touch(touch)
         if round_.when_ended is not None:
+            while (
+                next_potion_chug is not None
+                and next_potion_chug.when_created < round_.when_ended
+            ):
+                handle_potion_chug(next_potion_chug)
+                next_potion_chug = next(potion_chug_iter, None)
             zombies |= untouched
             for player_id in untouched:
                 when_turned_zombie[player_id] = when_turned_zombie.get(player_id) or (

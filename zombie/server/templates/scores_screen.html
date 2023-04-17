@@ -20,22 +20,22 @@ $(document).ready(function(e) {
 
     function points(item) {
         if (item.is_initial_zombie) {
-            return "<img src='{{ url_for('static', filename='zombie.png') }}' class='zombie-logo'></img>"
+            return "<img src='{{ url_for('static', filename='communist.png') }}' class='zombie-logo'></img>"
         }
         if (item.is_zombie) {
-            return "<img src='{{ url_for('static', filename='biohazard.png') }}' class='zombie-logo'></img>"
+            return "<img src='{{ url_for('static', filename='rebel.png') }}' class='zombie-logo'></img>"
         }
-        return "<span class=\"points\">" + item.points + "</span>"
+        return "<span class=\"points\"> $" + (item.points * 100000).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "</span>"
     }
 
     var round_scores_table = DynamicTable().config('round-scores-table',
         [redacted, points],
-        ["Name", "Points"],
+        ["Name", "Money"],
         'There are no players in this game.');
 
     var final_scores_table = DynamicTable().config('final-scores-table',
         ['name', points],
-        ["Name", "Points"],
+        ["Name", "Money"],
         'There are no players in this game.');
 
     function show_no_scores() {
@@ -104,7 +104,8 @@ $(document).ready(function(e) {
     <table class="styled-table" id="final-scores-table"></table>
 </div>
 <footer>
-    <a href="https://www.flaticon.com/free-icons/zombie" title="zombie icons">Zombie icons created by Smashicons - Flaticon</a><br>
-    <a href="https://www.flaticon.com/free-icons/biohazard" title="biohazard icons">Biohazard icons created by Freepik - Flaticon</a>
+    <a href="https://www.flaticon.com/free-icons/communist" title="communist icons">Communist icons created by Freepik - Flaticon</a><br>
+    <a href="https://www.flaticon.com/free-icons/star" title="star icons">Star icons created by designvector10 - Flaticon</a><br>
+    <a href="https://www.flaticon.com/free-icons/fist" title="fist icons">Fist icons created by Freepik - Flaticon</a>
 </footer>
 {% endblock %}

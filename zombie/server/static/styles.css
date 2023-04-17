@@ -182,3 +182,27 @@ input[type=number]::-webkit-outer-spin-button {
 .points {
     font-size: 3em;
 }
+
+.progressbar {
+    border: 2px solid #EEEEEE;
+    /* (height of inner div) / 2 + padding */
+    padding: 3px;
+}
+  
+.progressbar>div {
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 7px,
+        #EEEEEE 7px,
+        #EEEEEE 9px
+    );
+    width: 0%;
+    /* Adjust with JavaScript */
+    height: 20px;
+}
+
+
+.book {
+    height: 10em;
+}

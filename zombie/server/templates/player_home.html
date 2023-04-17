@@ -4,6 +4,42 @@
 {% block html_head %}
 <script src="{{url_for('static', filename='dynamic_table.js')}}"></script>
 <script>
+function timer(done_callback, poll_callback, delay) {
+    var id;
+    var started;
+    var remaining = delay;
+    var running;
+    var poll_timer;
+
+    this.start = function() {
+        running = true;
+        started = new Date();
+        id = setTimeout(this.done, remaining);
+        poll_timer = setTimeout(this.poll.bind(this), 40);
+    }
+
+    this.stop = function() {
+        running = false;
+        clearTimeout(id);
+        clearTimeout(poll_timer);
+    }
+
+    this.done = function() {
+        clearTimeout(poll_timer);
+        poll_callback(remaining);
+        done_callback();
+    }
+
+    this.poll = function() {
+        poll_callback(new Date() - started);
+        poll_timer = setTimeout(this.poll.bind(this), 40);
+    }
+
+    this.getStateRunning = function() {
+        return running;
+    }
+}
+
 $(document).ready(function(e) {
     var current_state_div = $('#div-loading');
 
@@ -29,10 +65,22 @@ $(document).ready(function(e) {
         set_current_state_div($('#div-role-screen'));
     }
 
+    function set_state_round_active () {
+        set_current_state_div($('#div-round'));
+    }
+
+    function set_state_round_over () {
+        set_current_state_div($('#div-round-end'));
+    }
+
+    function set_state_game_over () {
+        set_current_state_div($('#div-game-end'));
+    }
+
     function update_from_result (data) {
         var active_game_id = data.game_id;
         var player_name = data.name;
-        var player_role = data.is_initial_zombie ? "Zombie" : "Human"
+        var player_role = data.is_initial_zombie ? "Communist" : "Capitalist"
 
         $(".player-name").each(
             function() {
@@ -54,9 +102,11 @@ $(document).ready(function(e) {
         } else if (data.round_number === 0){
             set_state_role_reveal();
         } else if (!data.round_ended) {
-
+            set_state_round_active();
+        } else if (data.round_number !== 3){
+            set_state_round_over();
         } else {
-
+            set_state_game_over();
         }
     }
 
@@ -104,6 +154,34 @@ $(document).ready(function(e) {
         $('#player-role').attr("hidden", true);
     });
 
+    function read_complete () {
+        console.info("READ COMPLETE");
+    }
+    
+    function read_progress (time) {
+        $('#read-progress>div').width(time / 3000 * 100 + "%");
+    }
+
+    read_timer = new timer(read_complete, read_progress, 3000);
+    
+    $('#book-area').bind("touchstart mousedown", function () {
+        $('#open-book').attr("hidden", false);
+        $('#read-progress').attr("hidden", false);
+        $('#closed-book').attr("hidden", true);
+        read_timer.start();
+    });
+
+    $('#book-area').bind("touchend mouseup mouseleave touchcancel", function () {
+        $('#open-book').attr("hidden", true);
+        $('#read-progress').attr("hidden", true);
+        $('#closed-book').attr("hidden", false);
+        read_timer.stop();
+        $('#read-progress>div').width("0%");
+    });
+
+    $('#book-area').on('dragstart contextmenu', function(event) { event.preventDefault(); });
+
+
     (function update() {
         $.ajax({
             dataType: "json",
@@ -113,7 +191,7 @@ $(document).ready(function(e) {
             complete: setTimeout(function() {update()}, 1000),
             timeout: 1000
         });
-    })();    
+    })();
 });
 </script>
 {% endblock %}
@@ -131,7 +209,7 @@ $(document).ready(function(e) {
 </div>
 <div id="div-registration-form" hidden=true>
     <h1>Welcome</h1>
-    Welcome to the Zombie game!<br>
+    Welcome to  game!<br>
     To start, please enter your name.
     <form autocomplete="off">
         <input type="text" name="name" id="form-input-name"><br>
@@ -155,10 +233,22 @@ $(document).ready(function(e) {
         <span id="player-role" class="player-role" hidden="hidden"></span>
     </span>
 </div>
-<div id="div-please-wait" hidden=true>
+<div id="div-round" hidden=true>
+    <div id="book-area">
+        <img id="closed-book" class="book" src="{{ url_for('static', filename='wealth.png') }}"></img><br>
+        <img id="open-book" class="book" src="{{ url_for('static', filename='adam.png') }}" hidden="hidden"></img><br>
+        <div id="read-progress" class="progressbar">
+            <div></div>
+        </div>
+        <progress id="read2-progress" value="0" max="3000"  hidden="hidden"></progress><br>
+        <img id="end-book" class="book" src="{{ url_for('static', filename='end.png') }}"  hidden="hidden"></img><br>
+    </div>
+</div>
+<div id="div-round-end" hidden=true>
     Please wait!
 </div>
-<div id="div-round" hidden=true>
-    Round active
+<div id="div-game-end" hidden=true>
+    Please wait!
 </div>
+
 {% endblock %}
