@@ -92,6 +92,13 @@ $(document).ready(function(e) {
                 $(this).html(player_role);
             }
         )
+        if (data.has_chugged_potion) {
+            $("#book-area").attr("hidden", true);
+            $("#end-book").attr("hidden", false);
+        } else {
+            $("#book-area").attr("hidden", false);
+            $("#end-book").attr("hidden", true);
+        }
 
         if (active_game_id === null || (player_name === null && data.game_is_started)) {
             set_state_no_active_game();
@@ -156,6 +163,21 @@ $(document).ready(function(e) {
 
     function read_complete () {
         console.info("READ COMPLETE");
+        $.ajax({
+            dataType: "json",
+            url: "{{ url_for('api.put_potion_chug') }}",
+            type: "PUT",
+            success: function () {},
+            data: JSON.stringify({nfc_id: $('#form-input-uid').val()}),
+            contentType: 'application/json',
+            statusCode: {
+                400: function () {
+                    set_error("Sorry, this name already exists!");
+                    $('#form-input-name').attr("disabled", false);
+                    $('#btn-name-submit').attr("disabled", false);
+                }
+            }
+        });
     }
     
     function read_progress (time) {
@@ -180,6 +202,7 @@ $(document).ready(function(e) {
     });
 
     $('#book-area').on('dragstart contextmenu', function(event) { event.preventDefault(); });
+    $('#end-book').on('dragstart contextmenu', function(event) { event.preventDefault(); });
 
 
     (function update() {
@@ -234,14 +257,19 @@ $(document).ready(function(e) {
     </span>
 </div>
 <div id="div-round" hidden=true>
+    <h1>The Wealth of Nations</h1>
     <div id="book-area">
+        Tap and hold to read
         <img id="closed-book" class="book" src="{{ url_for('static', filename='wealth.png') }}"></img><br>
         <img id="open-book" class="book" src="{{ url_for('static', filename='adam.png') }}" hidden="hidden"></img><br>
-        <div id="read-progress" class="progressbar">
+        <div id="read-progress" class="progressbar" hidden="hidden">
             <div></div>
         </div>
         <progress id="read2-progress" value="0" max="3000"  hidden="hidden"></progress><br>
-        <img id="end-book" class="book" src="{{ url_for('static', filename='end.png') }}"  hidden="hidden"></img><br>
+    </div>
+    <div id="end-book" hidden="hidden">
+        You have read The Wealth of Nations
+        <img class="book" src="{{ url_for('static', filename='end.png') }}"></img><br>
     </div>
 </div>
 <div id="div-round-end" hidden=true>

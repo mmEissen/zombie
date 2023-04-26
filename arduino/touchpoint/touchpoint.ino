@@ -27,6 +27,7 @@ products from Adafruit!
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <Adafruit_NeoPixel.h>
 
 #define PN532_SCK_1  (2)
 #define PN532_MISO_1 (3)
@@ -38,10 +39,19 @@ products from Adafruit!
 #define PN532_MOSI_2 (8)
 #define PN532_SS_2   (9)
 
-Adafruit_PN532 nfc_1(PN532_SCK_1, PN532_MISO_1, PN532_MOSI_1, PN532_SS_1);
-Adafruit_PN532 nfc_2(PN532_SCK_2, PN532_MISO_2, PN532_MOSI_2, PN532_SS_2);
+#define LED_PIN   (10)
+#define LED_COUNT    (2)
+#define LED_1 (0)
+#define LED_2 (1)
+
+#define RED_BIT_MASK (0b100)
+#define GREEN_BIT_MASK (0b010)
+#define BLUE_BIT_MASK (0b001)
 
 #define MAX_UID_LENGTH (7)
+
+Adafruit_PN532 nfc_1(PN532_SCK_1, PN532_MISO_1, PN532_MOSI_1, PN532_SS_1);
+Adafruit_PN532 nfc_2(PN532_SCK_2, PN532_MISO_2, PN532_MOSI_2, PN532_SS_2);
 
 uint8_t no_uid[MAX_UID_LENGTH] = { 0 };
 
@@ -49,6 +59,8 @@ uint8_t uid_1[MAX_UID_LENGTH] = { 0 };
 uint8_t length_1 = 7;
 uint8_t uid_2[MAX_UID_LENGTH] = { 0 };
 uint8_t length_2 = 7;
+
+Adafruit_NeoPixel lights(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup(void) {
   Serial.begin(19200);
@@ -75,6 +87,9 @@ void setup(void) {
   // the default behaviour of the PN532.
   nfc_1.setPassiveActivationRetries(0xFF);
   nfc_2.setPassiveActivationRetries(0xFF);
+
+  lights.begin();
+  lights.show();
 
   Serial.println("START");
 }
@@ -137,8 +152,30 @@ void check_reader(Adafruit_PN532 &nfc, uint8_t* current_uid, uint8_t &current_le
   }
 }
 
+void check_lights() {
+  if(!Serial.available()) {
+    return;
+  }
+  int data = Serial.read();
+  if (data < ' ' || data > ' ' + 64) {
+    return;
+  }
+  data -= ' ';
+  uint8_t red = data & RED_BIT_MASK ? 255 : 0;
+  uint8_t green = data & GREEN_BIT_MASK ? 255 : 0;
+  uint8_t blue = data & BLUE_BIT_MASK ? 255 : 0;
+  lights.setPixelColor(LED_1, red, green, blue);
+
+  data >>= 3;
+  red = data & RED_BIT_MASK ? 255 : 0;
+  green = data & GREEN_BIT_MASK ? 255 : 0;
+  blue = data & BLUE_BIT_MASK ? 255 : 0;
+  lights.setPixelColor(LED_2, red, green, blue);
+  lights.show();
+}
 
 void loop(void) {
   check_reader(nfc_1, uid_1, length_1, 1);
   check_reader(nfc_2, uid_2, length_2, 2);
+  check_lights();
 }
