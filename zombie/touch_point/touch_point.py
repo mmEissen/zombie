@@ -6,7 +6,7 @@ import dataclasses
 import urllib.parse
 
 
-_CONFIRM_DELAY = 1
+_CONFIRM_DELAY = 0.2
 
 
 @dataclasses.dataclass
@@ -19,6 +19,7 @@ class TouchPoint:
     _enter_time: int = 0
     _was_confirmed: bool = False
     _error: bool = False
+    _last_lights: tuple[nfc.Color, nfc.Color] = (nfc.Color.OFF, nfc.Color.OFF)
 
     def __post_init__(self) -> None:
         self._lock = threading.Lock()
@@ -85,7 +86,8 @@ class TouchPoint:
 
     def _is_confirmed(self) -> bool:
         return self._confirmed_progress == 100
-        
+
+
     def _on_both_entered(self):
         self._enter_time = time.time()
     
@@ -113,15 +115,36 @@ class TouchPoint:
         self._on_one_exit()
 
     def _register_touch(self) -> None:
-        response = requests.put(
-            f"{self.server_url}/api/touch",
-            json={
-                "left_uid": self._left_uid,
-                "right_uid": self._right_uid,
-            },
-        )
+        try:
+            response = requests.put(
+                f"{self.server_url}/api/touch",
+                json={
+                    "left_uid": self._left_uid,
+                    "right_uid": self._right_uid,
+                },
+            )
+        except Exception:
+            self._error = True
+            return
         if response.status_code >= 400:
             self._error = True
+
+    def _set_lights(self, left: nfc.Color, right: nfc.Color) -> None:
+        if (left, right) == self._last_lights:
+            return
+        self._last_lights = (left, right)
+        self._nfc.set_lights(left, right)
+
+    def _update_lights(self):
+        if self._error:
+            self._set_lights(nfc.Color.RED, nfc.Color.RED)
+            return
+        if self._confirmed_progress >= 100:
+            self._set_lights(nfc.Color.GREEN, nfc.Color.GREEN)
+            return
+        left = nfc.Color.BLUE if self._left_uid else nfc.Color.OFF
+        right = nfc.Color.BLUE if self._right_uid else nfc.Color.OFF
+        self._set_lights(left, right)
 
     def loop(self) -> None:
         with self._lock:
@@ -130,6 +153,7 @@ class TouchPoint:
             if self._is_confirmed() and not self._was_confirmed:
                 self._was_confirmed = True
                 self._register_touch()
+            self._update_lights()
         time.sleep(0.05)
     
     def run_forever(self) -> None:

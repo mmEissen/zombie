@@ -42,6 +42,8 @@ class DoubleReader:
         self._write_queue.put_nowait(encoded_data)
     
     def _read_sensors(self, ser: serial.Serial) -> None:
+        if not ser.in_waiting:
+            return
         line = str(ser.readline(), "ascii").strip()
         if not re.fullmatch(_RE_CORRECT_LINE, line):
             return
