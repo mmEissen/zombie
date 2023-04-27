@@ -81,8 +81,6 @@ def launch_window(model: touch_point.TouchPoint) -> None:
     root = tkinter.Tk()
 
     root.geometry("640x480")
-    root.minsize(640, 480)
-    root.maxsize(640, 480)
     root.attributes("-fullscreen", True)
 
     gui = Screen(root)
@@ -94,5 +92,5 @@ def launch_window(model: touch_point.TouchPoint) -> None:
 
 
 def _to_qr_image(url: str) -> ImageTk.PhotoImage:
-    image = qrcode.make(url, error_correction=qrcode.ERROR_CORRECT_L, box_size=4)
+    image = qrcode.make(url, error_correction=qrcode.ERROR_CORRECT_L, box_size=8)
     return ImageTk.PhotoImage(image)
