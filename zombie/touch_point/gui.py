@@ -30,8 +30,8 @@ class Screen:
                 self.root,
                 bg=self.CONFIRMED_COLOR,
             )
-            self.right_label = tkinter.Label(self.right)
-            self.right_label.pack()
+            # self.right_label = tkinter.Label(self.right)
+            # self.right_label.pack()
 
             self.left.pack(anchor=tkinter.W, fill=tkinter.BOTH, expand=True, side=tkinter.LEFT)
             self.right.pack(anchor=tkinter.W, fill=tkinter.BOTH, expand=True, side=tkinter.LEFT)
@@ -41,12 +41,12 @@ class Screen:
             self.left_image = _to_qr_image(model.left_url())
 
             right_uid = model.right_uid
-            self.right_image = _to_qr_image(model.right_url())
+            # self.right_image = _to_qr_image(model.right_url())
 
             confirmed = model.is_confirmed()
 
             self.left_label.configure(image=self.left_image)
-            self.right_label.configure(image=self.right_image)
+            # self.right_label.configure(image=self.right_image)
             
             if model.error:
                 self.left.configure(background=self.ERROR_COLOR)
@@ -80,9 +80,10 @@ class Screen:
 def launch_window(model: touch_point.TouchPoint) -> None:
     root = tkinter.Tk()
 
-    root.geometry("1800x1050")
-    root.minsize(1000, 500)
-    root.maxsize(1000, 500)
+    root.geometry("640x480")
+    root.minsize(640, 480)
+    root.maxsize(640, 480)
+    root.attributes("-fullscreen", True)
 
     gui = Screen(root)
 
@@ -93,5 +94,5 @@ def launch_window(model: touch_point.TouchPoint) -> None:
 
 
 def _to_qr_image(url: str) -> ImageTk.PhotoImage:
-    image = qrcode.make(url, error_correction=qrcode.ERROR_CORRECT_L)
+    image = qrcode.make(url, error_correction=qrcode.ERROR_CORRECT_L, box_size=4)
     return ImageTk.PhotoImage(image)
