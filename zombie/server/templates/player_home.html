@@ -204,6 +204,9 @@ $(document).ready(function(e) {
     $('#book-area').on('dragstart contextmenu', function(event) { event.preventDefault(); });
     $('#end-book').on('dragstart contextmenu', function(event) { event.preventDefault(); });
 
+    $(document).on('contextmenu', function (e) {
+                return false;
+            });
 
     (function update() {
         $.ajax({
@@ -259,7 +262,7 @@ $(document).ready(function(e) {
 <div id="div-round" hidden=true>
     <h1>The Wealth of Nations</h1>
     <div id="book-area">
-        Tap and hold to read
+        Tap and hold to read<br>
         <img id="closed-book" class="book" src="{{ url_for('static', filename='wealth.png') }}"></img><br>
         <img id="open-book" class="book" src="{{ url_for('static', filename='adam.png') }}" hidden="hidden"></img><br>
         <div id="read-progress" class="progressbar" hidden="hidden">
@@ -268,15 +271,17 @@ $(document).ready(function(e) {
         <progress id="read2-progress" value="0" max="3000"  hidden="hidden"></progress><br>
     </div>
     <div id="end-book" hidden="hidden">
-        You have read The Wealth of Nations
+        You have read The Wealth of Nations <br>
         <img class="book" src="{{ url_for('static', filename='end.png') }}"></img><br>
     </div>
 </div>
 <div id="div-round-end" hidden=true>
-    Please wait!
+    <h1>Round Over</h1>
+    Please go to the living room for new intel!
 </div>
 <div id="div-game-end" hidden=true>
-    Please wait!
+    <h1>Game Over</h1>
+    Please go to the living room for the scores!
 </div>
 
 {% endblock %}
