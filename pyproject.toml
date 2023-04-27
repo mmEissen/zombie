@@ -17,6 +17,7 @@ pyserial = "^3.5"
 requests = "^2.28.2"
 pillow = "^9.5.0"
 qrcode = {extras = ["pil"], version = "^7.4.2"}
+psycopg2-binary = "^2.9.6"
 
 
 [tool.poetry.group.dev.dependencies]
