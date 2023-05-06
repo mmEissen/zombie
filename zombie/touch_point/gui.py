@@ -81,7 +81,7 @@ def launch_window(model: touch_point.TouchPoint) -> None:
     root = tkinter.Tk()
 
     root.geometry("640x480")
-    root.attributes("-fullscreen", True)
+    # root.attributes("-fullscreen", True)
 
     gui = Screen(root)
 

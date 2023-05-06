@@ -115,6 +115,7 @@ class TouchPoint:
         self._on_one_exit()
 
     def _register_touch(self) -> None:
+        print("touch...")
         try:
             response = requests.put(
                 f"{self.server_url}/api/touch",
@@ -128,6 +129,7 @@ class TouchPoint:
             return
         if response.status_code >= 400:
             self._error = True
+        print(response)
 
     def _set_lights(self, left: nfc.Color, right: nfc.Color) -> None:
         if (left, right) == self._last_lights:

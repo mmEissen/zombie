@@ -3,6 +3,9 @@ import psql2py_core
 
 from zombie.server import conf, db, admin, api, player, logic
 
+import logging
+
+log = logging.getLogger(__name__)
 
 def create_app(config: conf.AppConfig):
     app = flask.Flask(__name__)
@@ -27,6 +30,7 @@ def create_app(config: conf.AppConfig):
 
 
 def handle_user_facing_error(exception: logic.UserFacingError):
+    log.warning(exception.message)
     return flask.jsonify({"error": exception.message}), 400
 
 
@@ -34,4 +38,5 @@ def handle_value_error(exception: ValueError):
     if str(exception) != "A string literal cannot contain NUL (0x00) characters.":
         raise exception
     
+    log.warning("400")
     return flask.jsonify({"error": "Detected NUL (0x00) in input."}), 400

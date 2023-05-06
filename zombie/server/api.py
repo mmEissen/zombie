@@ -3,8 +3,13 @@ import flask
 import pydantic
 import urllib.parse
 from zombie.server import logic
+import logging
+
+log = logging.getLogger(__name__)
 
 blueprint = flask.Blueprint("api", __name__, url_prefix="/api")
+
+
 
 
 class PageInfo(pydantic.BaseModel):
@@ -117,6 +122,7 @@ class PutTouchData(pydantic.BaseModel):
 )
 def put_touch():
     data = PutTouchData(**flask.request.json)
+    log.warning(str(data))
 
     logic.make_touch(data.left_uid, data.right_uid)
 
