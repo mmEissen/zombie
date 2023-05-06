@@ -95,6 +95,7 @@ class TouchPoint:
         self._enter_time = 0
         self.confirmed_progress = 0
         self.error = False
+        self._was_confirmed = False
 
     def enter_left(self, uid: str) -> None:
         self.left_uid = uid
